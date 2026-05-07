@@ -234,4 +234,36 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          npm publish ${{ steps.pkg.outputs.flags }} --provenance
+          set -euo pipefail
+
+          NAME="${{ steps.pkg.outputs.name }}"
+          VERSION="${{ steps.pkg.outputs.version }}"
+
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "${NAME}@${VERSION} already exists in npm; skipping publish."
+          else
+            npm publish ${{ steps.pkg.outputs.flags }} --provenance
+          fi
+
+          npm access public "${NAME}"
+
+          ENCODED_NAME=$(node -e "console.log(encodeURIComponent(process.argv[1]))" "${NAME}")
+          for ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
+            HTTP_STATUS=$(curl -sS -o /tmp/npm-package.json -w "%{http_code}" "https://registry.npmjs.org/${ENCODED_NAME}")
+            if [ "${HTTP_STATUS}" = "200" ]; then
+              if node -e "const pkg=require('/tmp/npm-package.json'); process.exit(pkg.versions && pkg.versions[process.argv[1]] ? 0 : 1);" "${VERSION}"; then
+                echo "${NAME}@${VERSION} is public on npm."
+                exit 0
+              fi
+
+              echo "npm registry returned package metadata without ${VERSION} (attempt ${ATTEMPT}/10); waiting..."
+              sleep 15
+              continue
+            fi
+
+            echo "npm registry returned ${HTTP_STATUS} for ${NAME} (attempt ${ATTEMPT}/10); waiting..."
+            sleep 15
+          done
+
+          cat /tmp/npm-package.json || true
+          exit 1
