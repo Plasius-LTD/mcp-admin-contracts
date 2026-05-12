@@ -2,6 +2,6 @@
 
 ## Unreleased
 
-- Added the initial public-safe MCP admin contract package scaffold with
-  contract descriptors, response builders, package verification, tests, and
-  documentation.
+- Updated the published MCP admin contract package to the current v3 site
+  registry, including tuple-based capability descriptors plus bounded
+  analytics and user-aggregation whitelist surfaces.
