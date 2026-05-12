@@ -6,10 +6,16 @@ import {
   buildMcpDiscoveryResponse,
   buildMcpSchemaResponse,
   MCP_ADMIN_ACTIONS,
+  MCP_ADMIN_ANALYTICS_DIMENSIONS,
+  MCP_ADMIN_ANALYTICS_METRICS,
+  MCP_ADMIN_ANALYTICS_PRESETS,
   MCP_ADMIN_CONTRACT_VERSION,
   MCP_ADMIN_FOUNDATION_ENV_VAR,
   MCP_ADMIN_FOUNDATION_FLAG_ID,
   MCP_ADMIN_REGISTRY_SOURCE,
+  MCP_ADMIN_USER_AGGREGATION_DIMENSIONS,
+  MCP_ADMIN_USER_AGGREGATION_METRICS,
+  MCP_ADMIN_USER_AGGREGATION_PRESETS,
 } from "../src/index.js";
 
 describe("MCP admin contracts", () => {
@@ -26,10 +32,66 @@ describe("MCP admin contracts", () => {
 
   it("exposes action input and output shapes in the schema response", () => {
     const schema = buildMcpSchemaResponse();
+    const listFeatureFlags = schema.actions.listFeatureFlags!;
+    const enableFeatureFlag = schema.actions.enableFeatureFlag!;
+    const listCapabilities = schema.actions.listCapabilities!;
+    const getCapability = schema.actions.getCapability!;
+    const assignCapability = schema.actions.assignCapability!;
+    const unassignCapability = schema.actions.unassignCapability!;
+    const updateCapability = schema.actions.updateCapability!;
+    const runAnalyticsQuery = schema.actions.runAnalyticsQuery!;
+    const runAnalyticsPreset = schema.actions.runAnalyticsPreset!;
+    const aggregateUsers = schema.actions.aggregateUsers!;
+    const aggregateUsersByPreset = schema.actions.aggregateUsersByPreset!;
+    const listAnalyticsMetrics = schema.actions.listAnalyticsMetrics!;
+    const listAnalyticsDimensions = schema.actions.listAnalyticsDimensions!;
+    const listAggregationMetrics = schema.actions.listAggregationMetrics!;
+    const listAggregationDimensions = schema.actions.listAggregationDimensions!;
 
-    expect(schema.actions.listFeatureFlags!.execution.path).toBe("/api/ops/feature-flags");
-    expect(schema.actions.enableFeatureFlag!.input.flagKey!.required).toBe(true);
-    expect(schema.actions.runAnalyticsQuery!.input.metric!.required).toBe(true);
+    expect(listFeatureFlags.execution.path).toBe("/api/mcp/feature-flags");
+    expect(enableFeatureFlag.input.flagKey!.required).toBe(true);
+    expect(listCapabilities.output.items!.description).toContain("ruleKey");
+    expect(getCapability.output.item!.properties?.capabilityKey?.description).toContain(
+      "effective-capability",
+    );
+    expect(assignCapability.verification?.query).toContain(
+      "targetId={resolvedRuleId}",
+    );
+    expect(unassignCapability.input.service!.required).toBe(true);
+    expect(unassignCapability.input.ruleId!.required).toBe(false);
+    expect(updateCapability.input.ruleId!.required).toBe(false);
+    expect(runAnalyticsQuery.input.metric!.required).toBe(true);
+    expect(runAnalyticsQuery.input.metric!.enum).toEqual(
+      MCP_ADMIN_ANALYTICS_METRICS,
+    );
+    expect(runAnalyticsQuery.input.dimension!.enum).toEqual(
+      MCP_ADMIN_ANALYTICS_DIMENSIONS,
+    );
+    expect(runAnalyticsPreset.input.preset!.enum).toEqual(
+      MCP_ADMIN_ANALYTICS_PRESETS,
+    );
+    expect(aggregateUsers.execution.path).toBe("/api/users/admin/aggregation");
+    expect(aggregateUsers.input.metric!.enum).toEqual(
+      MCP_ADMIN_USER_AGGREGATION_METRICS,
+    );
+    expect(aggregateUsers.input.dimension!.enum).toEqual(
+      MCP_ADMIN_USER_AGGREGATION_DIMENSIONS,
+    );
+    expect(aggregateUsersByPreset.input.preset!.enum).toEqual(
+      MCP_ADMIN_USER_AGGREGATION_PRESETS,
+    );
+    expect(listAnalyticsMetrics.output.items!.enum).toEqual(
+      MCP_ADMIN_ANALYTICS_METRICS,
+    );
+    expect(listAnalyticsDimensions.output.items!.enum).toEqual(
+      MCP_ADMIN_ANALYTICS_DIMENSIONS,
+    );
+    expect(listAggregationMetrics.output.items!.enum).toEqual(
+      MCP_ADMIN_USER_AGGREGATION_METRICS,
+    );
+    expect(listAggregationDimensions.output.items!.enum).toEqual(
+      MCP_ADMIN_USER_AGGREGATION_DIMENSIONS,
+    );
     expect(schema.contextShape.extensionRules!.properties?.notes?.itemType).toBe("string");
     expect(Object.keys(schema.actions)).not.toContain("randomNumber");
   });

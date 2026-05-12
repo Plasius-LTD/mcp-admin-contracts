@@ -1,4 +1,4 @@
-export const MCP_ADMIN_CONTRACT_VERSION = "2026-04-09.v1";
+export const MCP_ADMIN_CONTRACT_VERSION = "2026-04-28.v3";
 export const MCP_ADMIN_REGISTRY_SOURCE = "@plasius/mcp-admin-contracts";
 
 export const MCP_ADMIN_FOUNDATION_FLAG_ID = "mcp.admin.foundation.enabled";
@@ -208,6 +208,158 @@ const arrayField = (
   ...options,
 });
 
+export const MCP_ADMIN_ANALYTICS_METRICS = [
+  "totalEvents",
+  "errorEvents",
+  "fatalEvents",
+  "uniqueIdentities",
+  "uniqueIpHashes",
+  "thresholdTriggerCount",
+] as const;
+
+export const MCP_ADMIN_ANALYTICS_DIMENSIONS = [
+  "timeline",
+  "source",
+  "component",
+  "action",
+  "errorFingerprint",
+] as const;
+
+export const MCP_ADMIN_ANALYTICS_PRESETS = [
+  "adminOverview",
+  "recentErrors",
+  "notificationsHealth",
+] as const;
+
+export const MCP_ADMIN_USER_AGGREGATION_METRICS = ["userCount"] as const;
+export const MCP_ADMIN_USER_AGGREGATION_DIMENSIONS = [
+  "accountState",
+  "notificationPreference",
+  "avatarState",
+  "accountAgeBand",
+] as const;
+export const MCP_ADMIN_USER_AGGREGATION_PRESETS = [
+  "usersByAccountState",
+  "usersByNotificationPreference",
+  "usersByAccountAgeBand",
+] as const;
+
+const MCP_ADMIN_ANALYTICS_QUERY_SUPPORT = [
+  {
+    metric: "totalEvents",
+    dimensions: ["timeline", "source", "component", "action"],
+    reportSections: ["summary", "timeline", "topSources", "topComponents", "topActions"],
+  },
+  {
+    metric: "errorEvents",
+    dimensions: ["timeline", "errorFingerprint"],
+    reportSections: ["summary", "timeline", "topErrorFingerprints", "thresholdTriggers"],
+  },
+  {
+    metric: "fatalEvents",
+    dimensions: ["timeline", "errorFingerprint"],
+    reportSections: ["summary", "timeline", "topErrorFingerprints", "thresholdTriggers"],
+  },
+  {
+    metric: "uniqueIdentities",
+    dimensions: ["timeline"],
+    reportSections: ["summary", "timeline"],
+  },
+  {
+    metric: "uniqueIpHashes",
+    dimensions: ["timeline"],
+    reportSections: ["summary", "timeline"],
+  },
+  {
+    metric: "thresholdTriggerCount",
+    dimensions: ["errorFingerprint"],
+    reportSections: ["summary", "topErrorFingerprints", "thresholdTriggers"],
+  },
+] as const;
+
+const MCP_ADMIN_ANALYTICS_PRESET_SUPPORT = [
+  {
+    preset: "adminOverview",
+    routes: ["/api/ops/analytics/report"],
+    responseSections: ["summary", "timeline", "topSources", "topComponents", "topActions"],
+  },
+  {
+    preset: "recentErrors",
+    routes: ["/api/ops/analytics/report"],
+    responseSections: ["summary", "timeline", "topErrorFingerprints", "thresholdTriggers"],
+  },
+  {
+    preset: "notificationsHealth",
+    routes: ["/api/ops/analytics/alert-policies", "/api/ops/analytics/advisories"],
+    responseSections: ["alertPolicies", "advisories"],
+  },
+] as const;
+
+function formatInlineCodeList(values: readonly string[]): string {
+  return values.map((value) => `\`${value}\``).join(", ");
+}
+
+function describeAnalyticsMatrixEntry(entry: {
+  metric: string;
+  dimensions: readonly string[];
+  reportSections: readonly string[];
+}): string {
+  return `\`${entry.metric}\` supports ${formatInlineCodeList(entry.dimensions)} and maps onto ${formatInlineCodeList(entry.reportSections)}.`;
+}
+
+function describeAnalyticsPresetEntry(entry: {
+  preset: string;
+  routes: readonly string[];
+  responseSections: readonly string[];
+}): string {
+  return `\`${entry.preset}\` fans out to ${formatInlineCodeList(entry.routes)} and returns ${formatInlineCodeList(entry.responseSections)}.`;
+}
+
+const CAPABILITY_SCOPE_ENUM = ["global", "role", "group", "user"] as const;
+
+const capabilityPayloadField = (
+  description: string,
+  options: Partial<McpFieldShape> = {},
+): McpFieldShape =>
+  objectField(description, {
+    kind: stringField("Payload kind (`flag`, `route`, `url`, or `config`).", {
+      enum: ["flag", "route", "url", "config"],
+    }),
+    target: stringField("Optional route or https target carried by the payload.", {
+      required: false,
+    }),
+    params: objectField("Optional payload params preserved verbatim from the rule model.", {}, {
+      required: false,
+    }),
+    schemaVersion: numberField("Positive payload schema version."),
+  }, options);
+
+const capabilityWindowField = (
+  description: string,
+  options: Partial<McpFieldShape> = {},
+): McpFieldShape =>
+  objectField(description, {
+    startsAt: stringField("Inclusive ISO-8601 start timestamp.", { required: false }),
+    endsAt: stringField("Exclusive ISO-8601 end timestamp.", { required: false }),
+  }, options);
+
+const capabilitySourceField = (
+  description: string,
+  options: Partial<McpFieldShape> = {},
+): McpFieldShape =>
+  objectField(description, {
+    ruleId: stringField("Resolved backend rule id when a stored rule supplied the capability.", {
+      required: false,
+    }),
+    scope: stringField("Scope of the winning rule when present.", {
+      required: false,
+      enum: [...CAPABILITY_SCOPE_ENUM],
+    }),
+    subject: stringField("Rule subject of the winning rule when present.", {
+      required: false,
+    }),
+  }, options);
+
 export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   {
     name: "listFeatureFlags",
@@ -217,8 +369,11 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     availability: "existing",
     execution: {
       method: "GET",
-      path: "/api/ops/feature-flags",
+      path: "/api/mcp/feature-flags",
       source: "existing-route",
+      notes: [
+        "Delegates to the shared admin feature-flag list adapter instead of exposing the raw persistence route directly.",
+      ],
     },
     input: {
       continuationToken: stringField("Opaque page token returned by a prior list call.", {
@@ -237,7 +392,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     availability: "existing",
     execution: {
       method: "GET",
-      path: "/api/ops/feature-flags/{key}",
+      path: "/api/mcp/feature-flags/{key}",
       source: "existing-route",
     },
     input: {
@@ -265,8 +420,11 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     availability: "existing",
     execution: {
       method: "PATCH",
-      path: "/api/ops/feature-flags/{key}",
+      path: "/api/mcp/feature-flags/{key}",
       source: "existing-route",
+      notes: [
+        "Only the allowlisted mutable fields are exposed through the MCP adapter.",
+      ],
     },
     input: {
       flagKey: stringField("Stable feature flag key.", { required: true }),
@@ -286,8 +444,8 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
     execution: {
-      method: "PATCH",
-      path: "/api/ops/feature-flags/{key}",
+      method: "POST",
+      path: "/api/mcp/feature-flags/{key}/enable",
       source: "existing-route",
       notes: [
         "Maps to the approved feature-flag PATCH semantics rather than a separate persistence model.",
@@ -313,8 +471,8 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
     execution: {
-      method: "PATCH",
-      path: "/api/ops/feature-flags/{key}",
+      method: "POST",
+      path: "/api/mcp/feature-flags/{key}/disable",
       source: "existing-route",
       notes: [
         "Maps to the approved feature-flag PATCH semantics rather than a separate persistence model.",
@@ -341,8 +499,11 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     availability: "existing",
     execution: {
       method: "GET",
-      path: "/api/ops/audit/events",
+      path: "/api/mcp/feature-flags/{key}/history",
       source: "existing-route",
+      notes: [
+        "Delegates to the shared admin audit query path filtered to `admin.feature-flag.update` and the target feature flag.",
+      ],
     },
     input: {
       flagKey: stringField("Stable feature flag key.", { required: true }),
@@ -351,6 +512,17 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     },
     output: {
       items: arrayField("Audit events related to the target feature flag.", "AdminAuditEvent"),
+      summary: objectField("Audit query summary for verification workflows.", {
+        returnedCount: numberField("Number of matching events returned.", { required: false }),
+        daysSearched: numberField("Lookback window searched in days.", { required: false }),
+      }, { required: false }),
+      filters: objectField("Canonical audit filters applied to the history lookup.", {
+        days: numberField("Lookback window in days.", { required: false }),
+        limit: numberField("Maximum events returned.", { required: false }),
+        family: stringField("Audit family filter.", { required: false }),
+        targetId: stringField("Feature flag target identifier.", { required: false }),
+        targetType: stringField("Audit target type.", { required: false }),
+      }, { required: false }),
     },
   },
   {
@@ -363,12 +535,18 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       method: "GET",
       path: "/api/ops/capability-rules",
       source: "existing-route",
+      notes: [
+        "Each returned rule includes the canonical MCP `ruleKey` tuple plus the resolved backend `ruleId` used for deletes and audit verification.",
+      ],
     },
     input: {
       service: stringField("Service key to filter the rule list.", { required: false }),
     },
     output: {
-      items: arrayField("Capability rule descriptors for the requested service.", "CapabilityRule"),
+      items: arrayField(
+        "Normalized capability rule descriptors keyed by `ruleKey` and `ruleId`, including service/capability/scope/subject plus payload/window metadata.",
+        "CapabilityRule",
+      ),
     },
   },
   {
@@ -388,13 +566,30 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     },
     output: {
       item: objectField("Effective capability record for the authenticated user.", {
+        capabilityKey: stringField(
+          "Canonical MCP effective-capability identifier `service=<service>;capability=<capability>`.",
+        ),
+        service: stringField("Service key."),
         capability: stringField("Capability identifier."),
         enabled: booleanField("Whether the capability is enabled."),
-        payload: objectField("Optional capability payload.", {}, { required: false }),
-        window: objectField("Optional active window.", {
-          startsAt: stringField("Inclusive ISO-8601 start timestamp.", { required: false }),
-          endsAt: stringField("Exclusive ISO-8601 end timestamp.", { required: false }),
-        }, { required: false }),
+        source: capabilitySourceField("Winning rule metadata when the capability came from a stored rule."),
+        payload: capabilityPayloadField("Optional capability payload.", { required: false }),
+        window: capabilityWindowField("Optional active window.", { required: false }),
+        nextTransitionAt: stringField("Next scheduled transition derived from the active rule window.", {
+          required: false,
+        }),
+        target: stringField("Optional target resolved from the effective capability payload.", {
+          required: false,
+        }),
+        description: stringField("Optional operator-facing description for the effective capability.", {
+          required: false,
+        }),
+        requiredResource: stringField("Optional resource required to exercise the capability.", {
+          required: false,
+        }),
+        requiredScopes: arrayField("Optional scopes required to exercise the capability.", "string", {
+          required: false,
+        }),
       }),
     },
   },
@@ -408,32 +603,61 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       method: "POST",
       path: "/api/ops/capability-rules",
       source: "existing-route",
+      notes: [
+        "The canonical MCP identity is the `service/capability/scope/subject` tuple, even though the backend stores a generated `ruleId`.",
+      ],
     },
     input: {
       service: stringField("Service key for the capability assignment.", { required: true }),
       capability: stringField("Capability identifier.", { required: true }),
       scope: stringField("Rule scope (`global`, `role`, `group`, or `user`).", {
         required: true,
-        enum: ["global", "role", "group", "user"],
+        enum: [...CAPABILITY_SCOPE_ENUM],
       }),
       subject: stringField("Rule subject when the scope is not global.", { required: false }),
       enabled: booleanField("Whether the rule enables the capability.", { required: true }),
-      payload: objectField("Optional payload returned in capability discovery.", {}, {
+      payload: capabilityPayloadField("Optional payload returned in capability discovery.", {
         required: false,
       }),
-      window: objectField("Optional time window for the rule.", {
-        startsAt: stringField("Inclusive ISO-8601 start timestamp.", { required: false }),
-        endsAt: stringField("Exclusive ISO-8601 end timestamp.", { required: false }),
-      }, { required: false }),
+      window: capabilityWindowField("Optional time window for the rule.", { required: false }),
+      target: stringField("Optional route or https target mirrored outside the payload for compatibility.", {
+        required: false,
+      }),
+      requiredResource: stringField("Optional resource required to exercise the capability.", {
+        required: false,
+      }),
+      requiredScopes: arrayField("Optional scopes required to exercise the capability.", "string", {
+        required: false,
+      }),
+      description: stringField("Optional operator-facing description for the stored rule.", {
+        required: false,
+      }),
     },
     output: {
       item: objectField("Stored capability rule.", {
-        id: stringField("Capability rule identifier."),
+        ruleId: stringField("Resolved backend capability rule identifier."),
+        ruleKey: stringField(
+          "Canonical MCP mutable-rule identifier `service=<service>;capability=<capability>;scope=<scope>;subject=<subject-or-*>`.",
+        ),
+        capabilityKey: stringField(
+          "Canonical MCP effective-capability identifier `service=<service>;capability=<capability>`.",
+        ),
         service: stringField("Service key."),
         capability: stringField("Capability identifier."),
         scope: stringField("Rule scope."),
         subject: stringField("Rule subject."),
+        enabled: booleanField("Whether the stored rule enables the capability."),
+        payload: capabilityPayloadField("Optional payload stored with the rule.", { required: false }),
+        window: capabilityWindowField("Optional time window stored with the rule.", {
+          required: false,
+        }),
       }),
+    },
+    verification: {
+      method: "GET",
+      path: "/api/ops/audit/events",
+      query: ["family=admin.capability-rule.update", "targetId={resolvedRuleId}"],
+      description: "Use admin audit history to verify the stored rule written by the capability assignment.",
     },
   },
   {
@@ -446,9 +670,23 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       method: "DELETE",
       path: "/api/ops/capability-rules/{id}",
       source: "existing-route",
+      notes: [
+        "When only the canonical tuple is supplied, the adapter resolves the matching `ruleId` from `/api/ops/capability-rules` before issuing the delete.",
+      ],
     },
     input: {
-      ruleId: stringField("Capability rule identifier.", { required: true }),
+      service: stringField("Service key for the rule being removed.", { required: true }),
+      capability: stringField("Capability identifier for the rule being removed.", {
+        required: true,
+      }),
+      scope: stringField("Rule scope for the rule being removed.", {
+        required: true,
+        enum: [...CAPABILITY_SCOPE_ENUM],
+      }),
+      subject: stringField("Rule subject when the scope is not global.", { required: false }),
+      ruleId: stringField("Optional previously discovered backend rule id for the target rule.", {
+        required: false,
+      }),
       destructiveConfirmationToken: stringField(
         "Confirmation token issued by `/api/ops/destructive-confirmations`.",
         { required: true },
@@ -456,11 +694,16 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     },
     output: {
       success: booleanField("Whether the delete request succeeded."),
+      resolvedRuleId: stringField("Resolved backend rule id that was deleted.", { required: false }),
+      ruleKey: stringField(
+        "Canonical MCP mutable-rule identifier for the deleted rule.",
+        { required: false },
+      ),
     },
     verification: {
       method: "GET",
       path: "/api/ops/audit/events",
-      query: ["family=admin.capability-rule.update", "targetId={ruleId}"],
+      query: ["family=admin.capability-rule.update", "targetId={resolvedRuleId}"],
       description: "Use admin audit history to verify capability-rule deletion.",
     },
   },
@@ -474,27 +717,59 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       method: "POST",
       path: "/api/ops/capability-rules",
       source: "existing-route",
+      notes: [
+        "Updates keep the tuple `service/capability/scope/subject` as the canonical MCP identity and may include a discovered `ruleId` only as an optimization hint.",
+      ],
     },
     input: {
-      id: stringField("Existing capability rule identifier.", { required: true }),
+      ruleId: stringField("Optional existing capability rule identifier discovered earlier.", {
+        required: false,
+      }),
       service: stringField("Service key.", { required: true }),
       capability: stringField("Capability identifier.", { required: true }),
       scope: stringField("Rule scope.", {
         required: true,
-        enum: ["global", "role", "group", "user"],
+        enum: [...CAPABILITY_SCOPE_ENUM],
       }),
       subject: stringField("Rule subject when the scope is not global.", { required: false }),
       enabled: booleanField("Whether the rule enables the capability.", { required: true }),
-      payload: objectField("Optional payload returned in capability discovery.", {}, {
+      payload: capabilityPayloadField("Optional payload returned in capability discovery.", {
+        required: false,
+      }),
+      window: capabilityWindowField("Optional time window for the rule.", { required: false }),
+      target: stringField("Optional route or https target mirrored outside the payload for compatibility.", {
+        required: false,
+      }),
+      requiredResource: stringField("Optional resource required to exercise the capability.", {
+        required: false,
+      }),
+      requiredScopes: arrayField("Optional scopes required to exercise the capability.", "string", {
+        required: false,
+      }),
+      description: stringField("Optional operator-facing description for the stored rule.", {
         required: false,
       }),
     },
     output: {
       item: objectField("Updated capability rule.", {
-        id: stringField("Capability rule identifier."),
+        ruleId: stringField("Resolved backend capability rule identifier."),
+        ruleKey: stringField(
+          "Canonical MCP mutable-rule identifier `service=<service>;capability=<capability>;scope=<scope>;subject=<subject-or-*>`.",
+        ),
+        capabilityKey: stringField(
+          "Canonical MCP effective-capability identifier `service=<service>;capability=<capability>`.",
+        ),
         service: stringField("Service key."),
         capability: stringField("Capability identifier."),
+        scope: stringField("Rule scope."),
+        subject: stringField("Rule subject."),
       }),
+    },
+    verification: {
+      method: "GET",
+      path: "/api/ops/audit/events",
+      query: ["family=admin.capability-rule.update", "targetId={resolvedRuleId}"],
+      description: "Use admin audit history to verify the stored rule updated by the capability mutation.",
     },
   },
   {
@@ -508,12 +783,15 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       path: "/api/mcp/schema",
       source: "registry-generated",
       notes: [
-        "The metric list is generated from the approved registry whitelist and maps onto `/api/ops/analytics/report` for execution.",
+        `The metric list is generated from the approved whitelist: ${formatInlineCodeList(MCP_ADMIN_ANALYTICS_METRICS)}.`,
+        "Whitelisted metrics map onto the bounded analytics report surface instead of a raw query engine.",
       ],
     },
     input: {},
     output: {
-      items: arrayField("Approved analytics metric names.", "string"),
+      items: arrayField("Approved analytics metric names.", "string", {
+        enum: MCP_ADMIN_ANALYTICS_METRICS,
+      }),
     },
   },
   {
@@ -526,10 +804,15 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       method: "GET",
       path: "/api/mcp/schema",
       source: "registry-generated",
+      notes: [
+        `The dimension list is generated from the approved whitelist: ${formatInlineCodeList(MCP_ADMIN_ANALYTICS_DIMENSIONS)}.`,
+      ],
     },
     input: {},
     output: {
-      items: arrayField("Approved analytics dimension names.", "string"),
+      items: arrayField("Approved analytics dimension names.", "string", {
+        enum: MCP_ADMIN_ANALYTICS_DIMENSIONS,
+      }),
     },
   },
   {
@@ -542,19 +825,85 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       method: "GET",
       path: "/api/ops/analytics/report",
       source: "existing-route",
+      notes: [
+        "The MCP contract exposes only the bounded analytics-report envelope; raw analytics-engine access, free-form query text, and direct blob-scan controls stay out of scope.",
+        ...MCP_ADMIN_ANALYTICS_QUERY_SUPPORT.map(describeAnalyticsMatrixEntry),
+        "The MCP query envelope exposes `lookbackHours`, `bucketMinutes`, `topN`, `thresholdCount`, and `thresholdWindowMinutes`; `maxBlobsScan` remains backend-controlled for load safety.",
+      ],
     },
     input: {
-      metric: stringField("Approved analytics metric.", { required: true }),
-      dimension: stringField("Approved analytics dimension.", { required: false }),
-      lookbackHours: numberField("Lookback window in hours.", { required: false }),
-      bucketMinutes: numberField("Bucket size in minutes.", { required: false }),
+      metric: stringField(
+        "Approved analytics metric. Use `listAnalyticsMetrics` first and keep to the whitelisted report projections.",
+        { required: true, enum: MCP_ADMIN_ANALYTICS_METRICS },
+      ),
+      dimension: stringField(
+        "Optional approved analytics dimension. Supported combinations are documented in ADR 0056 and the MCP discovery API docs.",
+        { required: false, enum: MCP_ADMIN_ANALYTICS_DIMENSIONS },
+      ),
+      lookbackHours: numberField(
+        "Lookback window in hours, bounded by the admin analytics report maximum.",
+        { required: false },
+      ),
+      bucketMinutes: numberField(
+        "Bucket size in minutes for timeline projections, bounded by the admin analytics report maximum.",
+        { required: false },
+      ),
       topN: numberField("Maximum ranked rows to return.", { required: false }),
+      thresholdCount: numberField(
+        "Optional error-burst threshold count used for threshold-trigger analysis.",
+        { required: false },
+      ),
+      thresholdWindowMinutes: numberField(
+        "Optional threshold-trigger window in minutes. The adapter translates this to the backend `thresholdWindowMs` query parameter.",
+        { required: false },
+      ),
     },
     output: {
       summary: objectField("Aggregate analytics summary.", {
+        generatedAt: stringField("UTC timestamp when the report was generated.", {
+          required: false,
+        }),
+        windowStart: stringField("Inclusive UTC start of the analyzed window.", {
+          required: false,
+        }),
+        windowEnd: stringField("Exclusive UTC end of the analyzed window.", {
+          required: false,
+        }),
+        lookbackHours: numberField("Lookback window used by the backing report.", {
+          required: false,
+        }),
+        bucketMinutes: numberField("Bucket size used by the backing report.", {
+          required: false,
+        }),
         totalEvents: numberField("Total events included in the report.", { required: false }),
+        errorEvents: numberField("Error-level events included in the report.", {
+          required: false,
+        }),
+        fatalEvents: numberField("Fatal events included in the report.", {
+          required: false,
+        }),
+        uniqueIdentities: numberField("Unique identity hashes observed in the window.", {
+          required: false,
+        }),
+        uniqueIpHashes: numberField("Unique IP hashes observed in the window.", {
+          required: false,
+        }),
       }),
-      buckets: arrayField("Bucketed analytics rows.", "AnalyticsBucket"),
+      timeline: arrayField("Timeline buckets for `timeline` projections.", "AnalyticsTimelinePoint"),
+      topSources: arrayField("Ranked source rows for `source` projections.", "AnalyticsRankedMetric"),
+      topComponents: arrayField(
+        "Ranked component rows for `component` projections.",
+        "AnalyticsRankedMetric",
+      ),
+      topActions: arrayField("Ranked action rows for `action` projections.", "AnalyticsRankedMetric"),
+      topErrorFingerprints: arrayField(
+        "Ranked error-fingerprint rows for `errorFingerprint` projections.",
+        "AnalyticsErrorFingerprint",
+      ),
+      thresholdTriggers: arrayField(
+        "Threshold trigger rows derived from the existing analytics report.",
+        "AnalyticsThresholdTrigger",
+      ),
     },
   },
   {
@@ -569,22 +918,68 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       source: "existing-route",
       notes: [
         "Preset names are curated in the registry; no unrestricted raw-query surface is exposed.",
+        ...MCP_ADMIN_ANALYTICS_PRESET_SUPPORT.map(describeAnalyticsPresetEntry),
       ],
     },
     input: {
       preset: stringField("Approved preset identifier.", {
         required: true,
-        enum: ["adminOverview", "notificationsHealth", "recentErrors"],
+        enum: MCP_ADMIN_ANALYTICS_PRESETS,
       }),
       lookbackHours: numberField("Optional preset-specific lookback window.", {
         required: false,
       }),
+      bucketMinutes: numberField("Optional preset-specific bucket size in minutes.", {
+        required: false,
+      }),
+      topN: numberField("Optional preset-specific ranked row limit.", {
+        required: false,
+      }),
+      thresholdCount: numberField(
+        "Optional preset-specific error-burst threshold count.",
+        { required: false },
+      ),
+      thresholdWindowMinutes: numberField(
+        "Optional preset-specific threshold window in minutes.",
+        { required: false },
+      ),
     },
     output: {
       summary: objectField("Aggregate analytics summary.", {
+        generatedAt: stringField("UTC timestamp when the report or preset payload was generated.", {
+          required: false,
+        }),
         totalEvents: numberField("Total events included in the report.", { required: false }),
+        errorEvents: numberField("Error-level events included in the report.", {
+          required: false,
+        }),
+        fatalEvents: numberField("Fatal events included in the report.", {
+          required: false,
+        }),
       }),
-      buckets: arrayField("Bucketed analytics rows.", "AnalyticsBucket"),
+      timeline: arrayField("Timeline buckets included by the preset.", "AnalyticsTimelinePoint"),
+      topSources: arrayField("Ranked source rows included by the preset.", "AnalyticsRankedMetric"),
+      topComponents: arrayField(
+        "Ranked component rows included by the preset.",
+        "AnalyticsRankedMetric",
+      ),
+      topActions: arrayField("Ranked action rows included by the preset.", "AnalyticsRankedMetric"),
+      topErrorFingerprints: arrayField(
+        "Ranked error-fingerprint rows included by the preset.",
+        "AnalyticsErrorFingerprint",
+      ),
+      thresholdTriggers: arrayField(
+        "Threshold trigger rows included by the preset.",
+        "AnalyticsThresholdTrigger",
+      ),
+      alertPolicies: arrayField(
+        "Alert policy rows returned only by the `notificationsHealth` preset.",
+        "AdminAlertPolicy",
+      ),
+      advisories: arrayField(
+        "Advisory rows returned only by the `notificationsHealth` preset.",
+        "AdminRemediationAdvisory",
+      ),
     },
   },
   {
@@ -592,18 +987,17 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     description: "List the approved user-aggregation metrics from the MCP whitelist.",
     domain: "userAggregation",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
-    availability: "near-future",
+    availability: "existing",
     execution: {
       method: "GET",
       path: "/api/mcp/schema",
       source: "registry-generated",
-      notes: [
-        "The whitelist is registry-generated while the execution route lands in the follow-on aggregation feature.",
-      ],
     },
     input: {},
     output: {
-      items: arrayField("Approved user-aggregation metric names.", "string"),
+      items: arrayField("Approved user-aggregation metric names.", "string", {
+        enum: MCP_ADMIN_USER_AGGREGATION_METRICS,
+      }),
     },
   },
   {
@@ -611,7 +1005,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     description: "List the approved user-aggregation dimensions from the MCP whitelist.",
     domain: "userAggregation",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
-    availability: "near-future",
+    availability: "existing",
     execution: {
       method: "GET",
       path: "/api/mcp/schema",
@@ -619,7 +1013,9 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     },
     input: {},
     output: {
-      items: arrayField("Approved user-aggregation dimension names.", "string"),
+      items: arrayField("Approved user-aggregation dimension names.", "string", {
+        enum: MCP_ADMIN_USER_AGGREGATION_DIMENSIONS,
+      }),
     },
   },
   {
@@ -627,19 +1023,45 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     description: "Run grouped user aggregation over the bounded admin user data surface.",
     domain: "userAggregation",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
-    availability: "near-future",
+    availability: "existing",
     execution: {
       method: "GET",
       path: "/api/users/admin/aggregation",
-      source: "near-future-route",
+      source: "existing-route",
+      notes: [
+        "Returns grouped summary buckets only, suppresses low-cardinality buckets, and never emits raw per-user export rows.",
+      ],
     },
     input: {
-      metric: stringField("Approved aggregation metric.", { required: true }),
-      dimension: stringField("Approved aggregation dimension.", { required: true }),
+      metric: stringField("Approved aggregation metric.", {
+        required: true,
+        enum: MCP_ADMIN_USER_AGGREGATION_METRICS,
+      }),
+      dimension: stringField("Approved aggregation dimension.", {
+        required: true,
+        enum: MCP_ADMIN_USER_AGGREGATION_DIMENSIONS,
+      }),
       limit: numberField("Maximum grouped rows to return.", { required: false }),
     },
     output: {
-      items: arrayField("Grouped summary rows only; raw user export remains out of scope.", "AggregationBucket"),
+      summary: objectField("Bounded grouped-summary metadata.", {
+        generatedAt: stringField("UTC timestamp when the aggregation payload was generated."),
+        metric: stringField("Approved aggregation metric.", {
+          enum: MCP_ADMIN_USER_AGGREGATION_METRICS,
+        }),
+        dimension: stringField("Approved aggregation dimension.", {
+          enum: MCP_ADMIN_USER_AGGREGATION_DIMENSIONS,
+        }),
+        usersScanned: numberField("How many user rows were scanned from the bounded admin data plane."),
+        returnedBucketCount: numberField("How many grouped buckets were returned."),
+        suppressedBucketCount: numberField("How many low-cardinality buckets were suppressed."),
+        omittedBucketCount: numberField("How many additional safe buckets were omitted after the requested limit."),
+        truncated: booleanField("Whether bounded scanning or response limits truncated the full grouped output."),
+      }),
+      items: arrayField(
+        "Grouped summary rows only; raw user export remains out of scope.",
+        "AggregationBucket",
+      ),
     },
   },
   {
@@ -647,21 +1069,41 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     description: "Run a curated user-aggregation preset against the bounded aggregation route.",
     domain: "userAggregation",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
-    availability: "near-future",
+    availability: "existing",
     execution: {
       method: "GET",
       path: "/api/users/admin/aggregation",
-      source: "near-future-route",
+      source: "existing-route",
     },
     input: {
       preset: stringField("Approved aggregation preset identifier.", {
         required: true,
-        enum: ["usersByRole", "usersByProvider", "usersByAdminPersona"],
+        enum: MCP_ADMIN_USER_AGGREGATION_PRESETS,
       }),
       limit: numberField("Maximum grouped rows to return.", { required: false }),
     },
     output: {
-      items: arrayField("Grouped summary rows only; raw user export remains out of scope.", "AggregationBucket"),
+      summary: objectField("Bounded grouped-summary metadata.", {
+        generatedAt: stringField("UTC timestamp when the aggregation payload was generated."),
+        metric: stringField("Metric resolved by the approved preset.", {
+          enum: MCP_ADMIN_USER_AGGREGATION_METRICS,
+        }),
+        dimension: stringField("Dimension resolved by the approved preset.", {
+          enum: MCP_ADMIN_USER_AGGREGATION_DIMENSIONS,
+        }),
+        preset: stringField("Approved preset that drove the query.", {
+          enum: MCP_ADMIN_USER_AGGREGATION_PRESETS,
+        }),
+        usersScanned: numberField("How many user rows were scanned from the bounded admin data plane."),
+        returnedBucketCount: numberField("How many grouped buckets were returned."),
+        suppressedBucketCount: numberField("How many low-cardinality buckets were suppressed."),
+        omittedBucketCount: numberField("How many additional safe buckets were omitted after the requested limit."),
+        truncated: booleanField("Whether bounded scanning or response limits truncated the full grouped output."),
+      }),
+      items: arrayField(
+        "Grouped summary rows only; raw user export remains out of scope.",
+        "AggregationBucket",
+      ),
     },
   },
 ] as const;

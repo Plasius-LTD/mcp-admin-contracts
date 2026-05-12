@@ -1,6 +1,7 @@
 # @plasius/mcp-admin-contracts
 
-Public-safe MCP admin discovery contract descriptors and response builders.
+Public-safe MCP admin discovery contract descriptors and response builders for
+the live Plasius MCP admin surface.
 
 ## Boundary
 
@@ -10,6 +11,7 @@ This package contains contract metadata only:
 - MCP schema/context/discovery response builders
 - AI plugin manifest builder
 - rollout flag identifiers used by the contract
+- analytics and bounded user-aggregation whitelist constants
 - TypeScript types for these payloads
 
 It intentionally does not contain runtime enforcement:
@@ -38,8 +40,16 @@ import {
   buildMcpDiscoveryResponse,
   buildMcpSchemaResponse,
   buildMcpContextResponse,
+  MCP_ADMIN_ANALYTICS_METRICS,
 } from "@plasius/mcp-admin-contracts";
 ```
+
+The exported registry currently covers:
+
+- feature-flag MCP adapters
+- capability-rule and effective-capability descriptors keyed by canonical tuple identities
+- bounded analytics queries and curated analytics presets
+- bounded grouped user-aggregation summaries without raw per-user export
 
 ## Local Development
 

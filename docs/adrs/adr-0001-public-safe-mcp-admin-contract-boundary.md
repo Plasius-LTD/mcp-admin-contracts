@@ -13,9 +13,11 @@ logic.
 ## Decision
 
 `@plasius/mcp-admin-contracts` contains only public-safe discovery metadata,
-types, flag identifiers, and pure response builders. Runtime systems remain
-responsible for session validation, authorization, rollout evaluation, rate
-limits, audit emission, persistence, and mutation execution.
+types, flag identifiers, whitelist constants, and pure response builders for
+the approved feature-flag, capability, analytics, and bounded user-aggregation
+surfaces. Runtime systems remain responsible for session validation,
+authorization, rollout evaluation, rate limits, audit emission, persistence,
+and mutation execution.
 
 ## Consequences
 
@@ -23,5 +25,7 @@ limits, audit emission, persistence, and mutation execution.
   secrets, and no production payloads.
 - Runtime systems can share the same MCP response contract without copying
   descriptors.
+- Bounded analytics and grouped user-aggregation schemas can evolve publicly
+  without exposing the private report engine or raw user exports.
 - Publishing this package does not grant access to any admin route or private
   data because the server-side runtime still enforces every privileged control.
