@@ -65,9 +65,12 @@ runtime path leakage before publishing.
 
 ## Governance
 
+- Workflow: [`WORKFLOW.md`](./WORKFLOW.md)
 - Security policy: [`SECURITY.md`](./SECURITY.md)
 - Code of conduct: [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md)
 - ADRs: [`docs/adrs`](./docs/adrs)
+- NFR: [`NFR.md`](./NFR.md)
+- Feature flags/capabilities: [`FLAGS_AND_CAPABILITIES.md`](./FLAGS_AND_CAPABILITIES.md)
 - CLA and legal docs: [`legal`](./legal)
 
 ## License
