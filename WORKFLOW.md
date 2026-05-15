@@ -8,8 +8,8 @@ repo. It keeps contract updates traceable, test-backed, and release-ready.
 ## 2. Rules
 
 - Use the heavy-weight workflow for feature, bug-fix, and contract-shape changes.
-- Follow the tracked issue hierarchy from `plasius-ltd-site` epic/feature/story/task
-  items.
+- Follow the tracked issue hierarchy from the central product planning
+  epic/feature/story/task items.
 - Assign the active implementation issue to the operator and keep it under
   progress until required checks pass.
 
@@ -25,7 +25,7 @@ repo. It keeps contract updates traceable, test-backed, and release-ready.
 
 ## 4. Governance Linkage
 
-- Parent feature for this batch: `Plasius-LTD/plasius-ltd-site#358`.
+- Parent feature for this batch: the central repo-hardening sweep feature.
 - Parent feature flag: `platform.repo-hardening-sweep.enabled`.
 - Contract edits should not add runtime auth/persistence/audit behaviour.
 
