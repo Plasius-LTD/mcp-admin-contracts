@@ -65,10 +65,18 @@ runtime path leakage before publishing.
 
 ## Governance
 
+- Agent boundary: [`AGENTS.md`](./AGENTS.md)
+- Delivery workflow: [`WORKFLOW.md`](./WORKFLOW.md)
+- Rollout controls: [`FLAGS_AND_CAPABILITIES.md`](./FLAGS_AND_CAPABILITIES.md)
+- Non-functional requirements: [`NFR.md`](./NFR.md)
 - Security policy: [`SECURITY.md`](./SECURITY.md)
 - Code of conduct: [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md)
 - ADRs: [`docs/adrs`](./docs/adrs)
 - CLA and legal docs: [`legal`](./legal)
+
+For `Plasius-LTD/mcp-admin-contracts#12`, the parent hardening flag
+`repo-review.2026-05-17.hardening.enabled` is runtime `N/A` because restoring
+these governance files does not change package behavior.
 
 ## License
 
