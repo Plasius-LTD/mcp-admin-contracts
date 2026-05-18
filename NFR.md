@@ -1,45 +1,71 @@
-# Non-Functional Requirements for @plasius/mcp-admin-contracts
+# NFR.md
 
 ## 1. Purpose
 
-This document defines the non-functional requirements (NFRs) for changes to the
-`@plasius/mcp-admin-contracts` package. The package is a public-safe contract
-surface only and must remain dependency-safe, deterministic, and low-risk for
-release automation.
+This file defines the non-functional baseline for `@plasius/mcp-admin-contracts`.
+Because this package is distributed publicly and consumed by runtime systems,
+its contract surface must remain safe, stable, testable, and free of private
+runtime behavior.
 
 ## 2. Security
 
-- Do not include secrets, credentials, local environment values, or runtime keys in
-  any contract descriptors.
-- Avoid adding executable runtime logic that could leak identity or authentication
-  context.
-- Preserve boundary isolation: discovery and contract builders must not perform
-  auth, persistence, or audit side effects.
+Priority: Critical
 
-## 3. Reliability and Compatibility
+Generated or edited code in this package must:
 
-- Contract exports must remain stable for existing callers except through
-  documented SemVer changes.
-- Keep shape changes additive where practical.
-- Keep exported payloads serializable and free of runtime-local objects.
-- Keep schema and payload tests aligned with public contract fixtures.
+- avoid secrets, tokens, credentials, private payload samples, or production identifiers
+- avoid network calls, environment reads, filesystem access, or hidden side effects
+- keep exports limited to types, constants, schema metadata, and pure response builders
+- validate any generated contract structures before publishing
 
-## 4. Build and Validation
+## 3. Privacy
 
-- Changes must pass `npm run typecheck`, `npm run lint`, `npm run test`, and
-  `npm run pack:check`.
-- Any release-impacting change must keep `npm run test` and build outputs green
-  under CI.
+Priority: Critical
 
-## 5. Rollout Controls
+This package must stay public-safe:
 
-- All rollout-sensitive work that flows into feature delivery must remain
-  associated with the parent Feature flag:
-  `platform.repo-hardening-sweep.enabled`.
-- Contract-only documentation and baseline governance changes are low-risk but must
-  still be tracked under the parent feature.
+- no personal data fixtures unless explicitly anonymized and necessary for tests
+- no contract examples that disclose sensitive operational fields
+- no runtime data access or persistence code
 
-## 6. Accessibility / Usability
+## 4. Reliability
 
-- Public contract docs must explain payload shape, intended caller ownership, and
-  operational assumptions clearly enough for downstream package consumers.
+Priority: High
+
+Changes must preserve:
+
+- deterministic pure-function behavior
+- stable module entrypoints and package exports
+- clear failure modes for invalid builder inputs
+- backward-compatible public contract behavior unless an intentional breaking change is documented
+
+## 5. Performance
+
+Priority: High
+
+This package should remain lightweight at the boundary:
+
+- avoid unnecessary bundle or parse cost in the common import path
+- prefer tree-shakeable exports and side-effect-free modules
+- do not add heavy transitive dependencies without clear justification
+
+## 6. Maintainability
+
+Priority: High
+
+Every change should:
+
+- respect the package boundary described in `AGENTS.md`
+- update README, ADRs, and changelog when public expectations change
+- keep the published package layout valid under `npm pack`
+- include tests for changed public behavior
+
+## 7. Validation Baseline
+
+Required local validation after changes:
+
+- `npm test`
+- `npm run build`
+- `npm run pack:check`
+
+Use CI confirmation as an additional completion gate when available.
