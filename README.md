@@ -51,6 +51,27 @@ The exported registry currently covers:
 - bounded analytics queries and curated analytics presets
 - bounded grouped user-aggregation summaries without raw per-user export
 
+Action descriptors keep their existing `description` field and also expose
+`descriptionKey` and `descriptionDefault` so clients can resolve display text
+through `@plasius/translations`:
+
+```ts
+import { createI18n } from "@plasius/translations";
+import {
+  buildMcpDiscoveryResponse,
+  mcpAdminContractsTranslations,
+} from "@plasius/mcp-admin-contracts";
+
+const i18n = createI18n({
+  language: "en-GB",
+  fallback: "en-GB",
+  translations: mcpAdminContractsTranslations,
+});
+const [action] = buildMcpDiscoveryResponse().actions;
+
+console.log(i18n.t(action.descriptionKey));
+```
+
 ## Local Development
 
 ```bash
