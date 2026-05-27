@@ -1,3 +1,19 @@
+import {
+  getMcpAdminContractDefaultTranslation,
+  mcpAdminContractDescriptionKeys,
+  mcpAdminContractsEnGbTranslations,
+  mcpAdminContractsTranslations,
+} from "./i18n.js";
+import type { McpAdminContractDescriptionKey } from "./i18n.js";
+
+export {
+  getMcpAdminContractDefaultTranslation,
+  mcpAdminContractDescriptionKeys,
+  mcpAdminContractsEnGbTranslations,
+  mcpAdminContractsTranslations,
+};
+export type { McpAdminContractDescriptionKey };
+
 export const MCP_ADMIN_CONTRACT_VERSION = "2026-04-28.v3";
 export const MCP_ADMIN_REGISTRY_SOURCE = "@plasius/mcp-admin-contracts";
 
@@ -54,6 +70,8 @@ export interface McpActionVerification {
   path: string;
   query: string[];
   description: string;
+  descriptionKey: McpAdminContractDescriptionKey;
+  descriptionDefault: string;
 }
 
 export type McpActionDomain =
@@ -67,6 +85,8 @@ export type McpActionFamilyDomain = McpActionDomain | "productionReadiness";
 export interface McpActionDescriptor {
   name: string;
   description: string;
+  descriptionKey: McpAdminContractDescriptionKey;
+  descriptionDefault: string;
   domain: McpActionDomain;
   rolloutFlag: string;
   availability: "existing" | "near-future";
@@ -79,6 +99,8 @@ export interface McpActionDescriptor {
 export interface McpActionSummary {
   name: string;
   description: string;
+  descriptionKey: McpAdminContractDescriptionKey;
+  descriptionDefault: string;
   domain: McpActionDomain;
   rolloutFlag: string;
   availability: McpActionDescriptor["availability"];
@@ -207,6 +229,23 @@ const arrayField = (
   itemType,
   ...options,
 });
+
+const translatedDescription = (
+  descriptionKey: McpAdminContractDescriptionKey,
+): {
+  description: string;
+  descriptionKey: McpAdminContractDescriptionKey;
+  descriptionDefault: string;
+} => {
+  const descriptionDefault =
+    getMcpAdminContractDefaultTranslation(descriptionKey);
+
+  return {
+    description: descriptionDefault,
+    descriptionKey,
+    descriptionDefault,
+  };
+};
 
 export const MCP_ADMIN_ANALYTICS_METRICS = [
   "totalEvents",
@@ -363,7 +402,7 @@ const capabilitySourceField = (
 export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   {
     name: "listFeatureFlags",
-    description: "List existing feature flags from the admin rollout control plane.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionListFeatureFlags),
     domain: "featureFlags",
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
@@ -386,7 +425,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "getFeatureFlag",
-    description: "Fetch one feature flag by stable key.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionGetFeatureFlag),
     domain: "featureFlags",
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
@@ -414,7 +453,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "updateFeatureFlag",
-    description: "Patch an existing feature flag without bypassing the current admin update semantics.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionUpdateFeatureFlag),
     domain: "featureFlags",
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
@@ -439,7 +478,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "enableFeatureFlag",
-    description: "Explicitly enable a feature flag through the existing update path.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionEnableFeatureFlag),
     domain: "featureFlags",
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
@@ -461,12 +500,14 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       method: "GET",
       path: "/api/ops/audit/events",
       query: ["family=admin.feature-flag.update", "targetId={flagKey}"],
-      description: "Use admin audit history to verify the rollout change.",
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.verificationEnableFeatureFlag,
+      ),
     },
   },
   {
     name: "disableFeatureFlag",
-    description: "Explicitly disable a feature flag through the existing update path.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionDisableFeatureFlag),
     domain: "featureFlags",
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
@@ -488,12 +529,16 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       method: "GET",
       path: "/api/ops/audit/events",
       query: ["family=admin.feature-flag.update", "targetId={flagKey}"],
-      description: "Use admin audit history to verify the rollout change.",
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.verificationDisableFeatureFlag,
+      ),
     },
   },
   {
     name: "getFeatureFlagHistory",
-    description: "Read feature-flag history through the canonical admin audit query path.",
+    ...translatedDescription(
+      mcpAdminContractDescriptionKeys.actionGetFeatureFlagHistory,
+    ),
     domain: "featureFlags",
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
@@ -527,7 +572,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "listCapabilities",
-    description: "List capability rules for a service using the existing capability-rule model.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionListCapabilities),
     domain: "capabilities",
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
@@ -551,7 +596,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "getCapability",
-    description: "Resolve one effective capability through the user-scoped capability read path.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionGetCapability),
     domain: "capabilities",
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
@@ -595,7 +640,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "assignCapability",
-    description: "Create or upsert a capability rule without introducing a second capability store.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionAssignCapability),
     domain: "capabilities",
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
@@ -657,12 +702,14 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       method: "GET",
       path: "/api/ops/audit/events",
       query: ["family=admin.capability-rule.update", "targetId={resolvedRuleId}"],
-      description: "Use admin audit history to verify the stored rule written by the capability assignment.",
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.verificationAssignCapability,
+      ),
     },
   },
   {
     name: "unassignCapability",
-    description: "Delete one capability rule through the current destructive confirmation flow.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionUnassignCapability),
     domain: "capabilities",
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
@@ -704,12 +751,14 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       method: "GET",
       path: "/api/ops/audit/events",
       query: ["family=admin.capability-rule.update", "targetId={resolvedRuleId}"],
-      description: "Use admin audit history to verify capability-rule deletion.",
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.verificationUnassignCapability,
+      ),
     },
   },
   {
     name: "updateCapability",
-    description: "Update a capability rule through the same upsert contract used for assignments.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionUpdateCapability),
     domain: "capabilities",
     rolloutFlag: MCP_ADMIN_LIVEOPS_FLAG_ID,
     availability: "existing",
@@ -769,12 +818,14 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       method: "GET",
       path: "/api/ops/audit/events",
       query: ["family=admin.capability-rule.update", "targetId={resolvedRuleId}"],
-      description: "Use admin audit history to verify the stored rule updated by the capability mutation.",
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.verificationUpdateCapability,
+      ),
     },
   },
   {
     name: "listAnalyticsMetrics",
-    description: "List the approved analytics metrics from the curated MCP whitelist.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionListAnalyticsMetrics),
     domain: "analytics",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
     availability: "existing",
@@ -796,7 +847,9 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "listAnalyticsDimensions",
-    description: "List the approved analytics dimensions from the curated MCP whitelist.",
+    ...translatedDescription(
+      mcpAdminContractDescriptionKeys.actionListAnalyticsDimensions,
+    ),
     domain: "analytics",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
     availability: "existing",
@@ -817,7 +870,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "runAnalyticsQuery",
-    description: "Run a bounded analytics query using the existing operational analytics report API.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionRunAnalyticsQuery),
     domain: "analytics",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
     availability: "existing",
@@ -908,7 +961,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "runAnalyticsPreset",
-    description: "Run a curated analytics preset instead of free-form BI-style queries.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionRunAnalyticsPreset),
     domain: "analytics",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
     availability: "existing",
@@ -984,7 +1037,9 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "listAggregationMetrics",
-    description: "List the approved user-aggregation metrics from the MCP whitelist.",
+    ...translatedDescription(
+      mcpAdminContractDescriptionKeys.actionListAggregationMetrics,
+    ),
     domain: "userAggregation",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
     availability: "existing",
@@ -1002,7 +1057,9 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "listAggregationDimensions",
-    description: "List the approved user-aggregation dimensions from the MCP whitelist.",
+    ...translatedDescription(
+      mcpAdminContractDescriptionKeys.actionListAggregationDimensions,
+    ),
     domain: "userAggregation",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
     availability: "existing",
@@ -1020,7 +1077,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "aggregateUsers",
-    description: "Run grouped user aggregation over the bounded admin user data surface.",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionAggregateUsers),
     domain: "userAggregation",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
     availability: "existing",
@@ -1066,7 +1123,9 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   },
   {
     name: "aggregateUsersByPreset",
-    description: "Run a curated user-aggregation preset against the bounded aggregation route.",
+    ...translatedDescription(
+      mcpAdminContractDescriptionKeys.actionAggregateUsersByPreset,
+    ),
     domain: "userAggregation",
     rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
     availability: "existing",
@@ -1112,6 +1171,8 @@ export function listMcpActionSummaries(): McpActionSummary[] {
   return MCP_ADMIN_ACTIONS.map((action) => ({
     name: action.name,
     description: action.description,
+    descriptionKey: action.descriptionKey,
+    descriptionDefault: action.descriptionDefault,
     domain: action.domain,
     rolloutFlag: action.rolloutFlag,
     availability: action.availability,
@@ -1177,16 +1238,20 @@ export function buildMcpSurfaceUrls(origin: string): McpSurfaceUrls {
 
 export function buildAiPluginManifest(origin: string): AiPluginManifest {
   const urls = buildMcpSurfaceUrls(origin);
+  const descriptionForModel = getMcpAdminContractDefaultTranslation(
+    mcpAdminContractDescriptionKeys.manifestDescriptionForModel,
+  );
+  const description = getMcpAdminContractDefaultTranslation(
+    mcpAdminContractDescriptionKeys.manifestDescription,
+  );
 
   return {
     schema_version: "1.0.0",
     name: "Plasius Admin MCP Discovery",
     name_for_model: "plasius_admin_control_plane",
     name_for_human: "Plasius Admin MCP",
-    description_for_model:
-      "OAuth-protected MCP discovery manifest for the Plasius admin control plane covering feature flags, capabilities, analytics, and audit-backed operations.",
-    description:
-      "Authenticated admin MCP discovery for the Plasius feature flag, capability, analytics, and audit control plane.",
+    description_for_model: descriptionForModel,
+    description,
     context_url: urls.contextUrl,
     actions_url: urls.actionsUrl,
     schema_url: urls.schemaUrl,
