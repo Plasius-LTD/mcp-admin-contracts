@@ -6,6 +6,8 @@
   verification, and manifest descriptions.
 - Added `descriptionKey` and `descriptionDefault` metadata to MCP action and
   verification descriptors while preserving existing `description` values.
+- Restored the package CD workflow so protected main releases are prepared by PR
+  and published without direct branch pushes.
 - Restored the repo governance companion files (`WORKFLOW.md`,
   `FLAGS_AND_CAPABILITIES.md`, and `NFR.md`) and linked them from the README.
 - Updated the published MCP admin contract package to the current v3 site
