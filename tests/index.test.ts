@@ -1,10 +1,15 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { createI18n } from "@plasius/translations";
 import {
   buildAiPluginManifest,
   buildMcpContextResponse,
   buildMcpDiscoveryResponse,
   buildMcpSchemaResponse,
+  getMcpAdminContractDefaultTranslation,
+  mcpAdminContractDescriptionKeys,
+  mcpAdminContractsEnGbTranslations,
+  mcpAdminContractsTranslations,
   MCP_ADMIN_ACTIONS,
   MCP_ADMIN_ANALYTICS_DIMENSIONS,
   MCP_ADMIN_ANALYTICS_METRICS,
@@ -26,6 +31,13 @@ describe("MCP admin contracts", () => {
     expect(response.sourceOfTruth).toBe(MCP_ADMIN_REGISTRY_SOURCE);
     expect(response.actions).toHaveLength(MCP_ADMIN_ACTIONS.length);
     expect(response.actions.map((action) => action.name)).toContain("listFeatureFlags");
+    expect(response.actions[0]).toMatchObject({
+      descriptionKey: mcpAdminContractDescriptionKeys.actionListFeatureFlags,
+      descriptionDefault:
+        mcpAdminContractsEnGbTranslations[
+          mcpAdminContractDescriptionKeys.actionListFeatureFlags
+        ],
+    });
     expect(response.actions.map((action) => action.name)).not.toContain("createPost");
     expect(response.actions.map((action) => action.name)).not.toContain("randomNumber");
   });
@@ -93,7 +105,58 @@ describe("MCP admin contracts", () => {
       MCP_ADMIN_USER_AGGREGATION_DIMENSIONS,
     );
     expect(schema.contextShape.extensionRules!.properties?.notes?.itemType).toBe("string");
+    expect(enableFeatureFlag.verification?.descriptionKey).toBe(
+      mcpAdminContractDescriptionKeys.verificationEnableFeatureFlag,
+    );
     expect(Object.keys(schema.actions)).not.toContain("randomNumber");
+  });
+
+  it("exposes translation metadata for every MCP action description", () => {
+    for (const action of MCP_ADMIN_ACTIONS) {
+      expect(action.description).toBe(action.descriptionDefault);
+      expect(action.descriptionDefault).toBe(
+        mcpAdminContractsEnGbTranslations[action.descriptionKey],
+      );
+      expect(action.descriptionKey).toMatch(/^mcpAdminContracts\.action\./);
+
+      if (action.verification) {
+        expect(action.verification.description).toBe(
+          action.verification.descriptionDefault,
+        );
+        expect(action.verification.descriptionDefault).toBe(
+          mcpAdminContractsEnGbTranslations[action.verification.descriptionKey],
+        );
+        expect(action.verification.descriptionKey).toMatch(
+          /^mcpAdminContracts\.verification\./,
+        );
+      }
+    }
+  });
+
+  it("allows MCP description defaults to resolve through @plasius/translations", () => {
+    const i18n = createI18n({
+      language: "en-GB",
+      fallback: "en-GB",
+      translations: mcpAdminContractsTranslations,
+    });
+
+    expect(
+      i18n.t(mcpAdminContractDescriptionKeys.actionUpdateFeatureFlag),
+    ).toBe(
+      "Patch an existing feature flag without bypassing the current admin update semantics.",
+    );
+    expect(
+      i18n.t(mcpAdminContractDescriptionKeys.verificationAssignCapability),
+    ).toBe(
+      "Use admin audit history to verify the stored rule written by the capability assignment.",
+    );
+    expect(
+      getMcpAdminContractDefaultTranslation(
+        "mcpAdminContracts.missing.description" as Parameters<
+          typeof getMcpAdminContractDefaultTranslation
+        >[0],
+      ),
+    ).toBe("mcpAdminContracts.missing.description");
   });
 
   it("builds context responses from caller-supplied safe context only", () => {
@@ -134,6 +197,14 @@ describe("MCP admin contracts", () => {
     expect(manifest).toMatchObject({
       schema_version: "1.0.0",
       name_for_model: "plasius_admin_control_plane",
+      description_for_model:
+        mcpAdminContractsEnGbTranslations[
+          mcpAdminContractDescriptionKeys.manifestDescriptionForModel
+        ],
+      description:
+        mcpAdminContractsEnGbTranslations[
+          mcpAdminContractDescriptionKeys.manifestDescription
+        ],
       context_url: "https://plasius.co.uk/api/mcp/context",
       actions_url: "https://plasius.co.uk/api/mcp/actions",
       schema_url: "https://plasius.co.uk/api/mcp/schema",
