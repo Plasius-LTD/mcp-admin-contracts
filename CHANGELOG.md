@@ -14,6 +14,20 @@
 - **Security**
   - (placeholder)
 
+## [0.2.5] - 2026-06-22
+
+- **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
 ## [0.2.4] - 2026-06-22
 
 - Added `en-GB` translation keys/defaults for MCP admin action,
@@ -33,3 +47,4 @@
 
 
 [0.2.4]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.4
+[0.2.5]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.5
