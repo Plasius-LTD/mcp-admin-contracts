@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.2.4] - 2026-06-22
+
 - Added `en-GB` translation keys/defaults for MCP admin action,
   verification, and manifest descriptions.
 - Added `descriptionKey` and `descriptionDefault` metadata to MCP action and
@@ -16,3 +30,6 @@
 - Added governance baseline companion docs to restore missing repository
   requirements (`NFR.md`, `WORKFLOW.md`, and `FLAGS_AND_CAPABILITIES.md`).
 - Removed private repository issue references from public governance docs.
+
+
+[0.2.4]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.4
