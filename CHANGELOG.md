@@ -6,6 +6,20 @@
   - (placeholder)
 
 - **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.2.6] - 2026-06-28
+
+- **Added**
+  - (placeholder)
+
+- **Changed**
   - Refreshed development dependency baselines to `@types/node@25.9.4`, `@typescript-eslint/*@8.62.0`, and `eslint@10.6.0` while keeping Node typings aligned with the supported Node 24 runtime line.
 
 - **Fixed**
@@ -48,3 +62,4 @@
 
 [0.2.4]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.4
 [0.2.5]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.5
+[0.2.6]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.6
