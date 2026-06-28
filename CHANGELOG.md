@@ -6,7 +6,7 @@
   - (placeholder)
 
 - **Changed**
-  - (placeholder)
+  - Refreshed development dependency baselines to `@types/node@25.9.4`, `@typescript-eslint/*@8.62.0`, and `eslint@10.6.0` while keeping Node typings aligned with the supported Node 24 runtime line.
 
 - **Fixed**
   - (placeholder)
