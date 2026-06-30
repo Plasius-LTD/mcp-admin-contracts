@@ -3,6 +3,20 @@
 ## Unreleased
 
 - **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.2.7] - 2026-06-30
+
+- **Added**
   - Governed asset catalog, source, pipeline, and review MCP discovery
     descriptors for the hosted Plasius backend MCP surface.
 
@@ -64,3 +78,4 @@
 [0.2.4]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.4
 [0.2.5]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.5
 [0.2.6]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.6
+[0.2.7]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.7
