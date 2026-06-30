@@ -3,7 +3,8 @@
 ## Unreleased
 
 - **Added**
-  - (placeholder)
+  - Governed asset catalog, source, pipeline, and review MCP discovery
+    descriptors for the hosted Plasius backend MCP surface.
 
 - **Changed**
   - (placeholder)

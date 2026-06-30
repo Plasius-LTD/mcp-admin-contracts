@@ -18,6 +18,12 @@ import {
   MCP_ADMIN_FOUNDATION_ENV_VAR,
   MCP_ADMIN_FOUNDATION_FLAG_ID,
   MCP_ADMIN_REGISTRY_SOURCE,
+  MCP_ASSET_CATALOG_REQUEST_CAPABILITY,
+  MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID,
+  MCP_ASSET_PIPELINE_FLAG_ID,
+  MCP_ASSET_PROCESSING_OPERATIONS,
+  MCP_ASSET_REVIEW_KINDS,
+  MCP_ASSET_SOURCE_ADAPTERS,
   MCP_ADMIN_USER_AGGREGATION_DIMENSIONS,
   MCP_ADMIN_USER_AGGREGATION_METRICS,
   MCP_ADMIN_USER_AGGREGATION_PRESETS,
@@ -31,6 +37,8 @@ describe("MCP admin contracts", () => {
     expect(response.sourceOfTruth).toBe(MCP_ADMIN_REGISTRY_SOURCE);
     expect(response.actions).toHaveLength(MCP_ADMIN_ACTIONS.length);
     expect(response.actions.map((action) => action.name)).toContain("listFeatureFlags");
+    expect(response.actions.map((action) => action.name)).toContain("searchAssetCatalog");
+    expect(response.actions.map((action) => action.name)).toContain("promoteAsset");
     expect(response.actions[0]).toMatchObject({
       descriptionKey: mcpAdminContractDescriptionKeys.actionListFeatureFlags,
       descriptionDefault:
@@ -59,6 +67,18 @@ describe("MCP admin contracts", () => {
     const listAnalyticsDimensions = schema.actions.listAnalyticsDimensions!;
     const listAggregationMetrics = schema.actions.listAggregationMetrics!;
     const listAggregationDimensions = schema.actions.listAggregationDimensions!;
+    const searchAssetCatalog = schema.actions.searchAssetCatalog!;
+    const getAssetManifest = schema.actions.getAssetManifest!;
+    const requestAsset = schema.actions.requestAsset!;
+    const searchAssetSources = schema.actions.searchAssetSources!;
+    const stageAssetSource = schema.actions.stageAssetSource!;
+    const createAssetJob = schema.actions.createAssetJob!;
+    const processAssetJob = schema.actions.processAssetJob!;
+    const renderAssetReview = schema.actions.renderAssetReview!;
+    const reviewAssetCandidate = schema.actions.reviewAssetCandidate!;
+    const promoteAsset = schema.actions.promoteAsset!;
+    const rollbackAsset = schema.actions.rollbackAsset!;
+    const getAssetJobStatus = schema.actions.getAssetJobStatus!;
 
     expect(listFeatureFlags.execution.path).toBe("/api/mcp/feature-flags");
     expect(enableFeatureFlag.input.flagKey!.required).toBe(true);
@@ -103,6 +123,32 @@ describe("MCP admin contracts", () => {
     );
     expect(listAggregationDimensions.output.items!.enum).toEqual(
       MCP_ADMIN_USER_AGGREGATION_DIMENSIONS,
+    );
+    expect(searchAssetCatalog.domain).toBe("assetCatalog");
+    expect(searchAssetCatalog.rolloutFlag).toBe(MCP_ASSET_PIPELINE_FLAG_ID);
+    expect(searchAssetCatalog.execution.path).toBe("/api/mcp/assets/catalog");
+    expect(searchAssetCatalog.output.capability!.description).toContain(
+      MCP_ASSET_CATALOG_REQUEST_CAPABILITY,
+    );
+    expect(getAssetManifest.execution.path).toBe(
+      "/api/mcp/assets/catalog/{assetId}/manifest",
+    );
+    expect(requestAsset.execution.notes?.join(" ")).toContain("live external source");
+    expect(searchAssetSources.rolloutFlag).toBe(MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID);
+    expect(searchAssetSources.input.sourceId!.enum).toEqual(MCP_ASSET_SOURCE_ADAPTERS);
+    expect(stageAssetSource.input.sourceId!.enum).toEqual(MCP_ASSET_SOURCE_ADAPTERS);
+    expect(createAssetJob.input.sourceAdapter!.enum).toContain("external-import");
+    expect(processAssetJob.input.operations!.enum).toEqual(MCP_ASSET_PROCESSING_OPERATIONS);
+    expect(renderAssetReview.input.captureKinds!.enum).toEqual(MCP_ASSET_REVIEW_KINDS);
+    expect(reviewAssetCandidate.input.decision!.enum).toEqual([
+      "approved",
+      "rejected",
+      "needs-changes",
+    ]);
+    expect(promoteAsset.verification?.query).toContain("targetId={jobId}");
+    expect(rollbackAsset.input.destructiveConfirmationToken!.required).toBe(true);
+    expect(getAssetJobStatus.output.job!.properties?.state?.description).toContain(
+      "pipeline",
     );
     expect(schema.contextShape.extensionRules!.properties?.notes?.itemType).toBe("string");
     expect(enableFeatureFlag.verification?.descriptionKey).toBe(
@@ -186,6 +232,16 @@ describe("MCP admin contracts", () => {
         expect.objectContaining({
           domain: "productionReadiness",
           actions: [],
+        }),
+        expect.objectContaining({
+          domain: "assetCatalog",
+          rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+          actions: ["searchAssetCatalog", "getAssetManifest", "requestAsset"],
+        }),
+        expect.objectContaining({
+          domain: "assetSource",
+          rolloutFlag: MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID,
+          actions: ["searchAssetSources", "stageAssetSource"],
         }),
       ]),
     );

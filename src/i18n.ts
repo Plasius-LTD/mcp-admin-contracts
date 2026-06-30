@@ -38,6 +38,28 @@ export const mcpAdminContractDescriptionKeys = {
   actionAggregateUsers: "mcpAdminContracts.action.aggregateUsers.description",
   actionAggregateUsersByPreset:
     "mcpAdminContracts.action.aggregateUsersByPreset.description",
+  actionSearchAssetCatalog:
+    "mcpAdminContracts.action.searchAssetCatalog.description",
+  actionGetAssetManifest:
+    "mcpAdminContracts.action.getAssetManifest.description",
+  actionRequestAsset: "mcpAdminContracts.action.requestAsset.description",
+  actionSearchAssetSources:
+    "mcpAdminContracts.action.searchAssetSources.description",
+  actionStageAssetSource:
+    "mcpAdminContracts.action.stageAssetSource.description",
+  actionCreateAssetJob: "mcpAdminContracts.action.createAssetJob.description",
+  actionUploadAssetSource:
+    "mcpAdminContracts.action.uploadAssetSource.description",
+  actionProcessAssetJob:
+    "mcpAdminContracts.action.processAssetJob.description",
+  actionRenderAssetReview:
+    "mcpAdminContracts.action.renderAssetReview.description",
+  actionReviewAssetCandidate:
+    "mcpAdminContracts.action.reviewAssetCandidate.description",
+  actionPromoteAsset: "mcpAdminContracts.action.promoteAsset.description",
+  actionRollbackAsset: "mcpAdminContracts.action.rollbackAsset.description",
+  actionGetAssetJobStatus:
+    "mcpAdminContracts.action.getAssetJobStatus.description",
   verificationEnableFeatureFlag:
     "mcpAdminContracts.verification.enableFeatureFlag.description",
   verificationDisableFeatureFlag:
@@ -48,6 +70,10 @@ export const mcpAdminContractDescriptionKeys = {
     "mcpAdminContracts.verification.unassignCapability.description",
   verificationUpdateCapability:
     "mcpAdminContracts.verification.updateCapability.description",
+  verificationPromoteAsset:
+    "mcpAdminContracts.verification.promoteAsset.description",
+  verificationRollbackAsset:
+    "mcpAdminContracts.verification.rollbackAsset.description",
 } as const;
 
 export type McpAdminContractDescriptionKey =

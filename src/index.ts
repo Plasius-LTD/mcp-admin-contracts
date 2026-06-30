@@ -27,6 +27,15 @@ export const MCP_ADMIN_PRODUCTION_READINESS_FLAG_ID =
   "mcp.admin.production-readiness.enabled";
 export const MCP_ADMIN_PRODUCTION_READINESS_ENV_VAR =
   "MCP_ADMIN_PRODUCTION_READINESS_ENABLED";
+export const MCP_ASSET_PIPELINE_FLAG_ID =
+  "asset.pipeline.unified-ai-assets.enabled";
+export const MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID =
+  "asset.pipeline.external-model-harvest.enabled";
+export const MCP_ASSET_CATALOG_REQUEST_CAPABILITY = "asset.catalog.request";
+export const MCP_ASSET_PIPELINE_MANAGE_CAPABILITY =
+  "asset.pipeline.mcp.manage";
+export const MCP_ASSET_SOURCE_MANAGE_CAPABILITY = "asset.source.manage";
+export const MCP_ASSET_CATALOG_REVIEW_CAPABILITY = "asset.catalog.review";
 
 export interface AiPluginManifest {
   schema_version: "1.0.0";
@@ -78,7 +87,11 @@ export type McpActionDomain =
   | "featureFlags"
   | "capabilities"
   | "analytics"
-  | "userAggregation";
+  | "userAggregation"
+  | "assetCatalog"
+  | "assetPipeline"
+  | "assetSource"
+  | "assetReview";
 
 export type McpActionFamilyDomain = McpActionDomain | "productionReadiness";
 
@@ -283,6 +296,48 @@ export const MCP_ADMIN_USER_AGGREGATION_PRESETS = [
   "usersByAccountAgeBand",
 ] as const;
 
+export const MCP_ASSET_SOURCE_ADAPTERS = [
+  "polyhaven",
+  "kenney",
+  "smithsonian-open-access",
+  "nasa",
+] as const;
+
+export const MCP_ASSET_SOURCE_TIERS = ["tier-0"] as const;
+
+export const MCP_ASSET_PROCESSING_OPERATIONS = [
+  "validate-source-metadata",
+  "metadata-cleanup",
+  "archive-inspection",
+  "validate-source",
+  "convert-to-gltf",
+  "normalize-orientation",
+  "normalize-units",
+  "normalize-origin",
+  "optimize-textures",
+  "generate-lod0",
+  "generate-lod1",
+  "generate-lod2",
+  "generate-lod3",
+  "generate-collision-proxy",
+  "package-runtime",
+] as const;
+
+export const MCP_ASSET_REVIEW_KINDS = [
+  "hero",
+  "front",
+  "back",
+  "left",
+  "right",
+  "top",
+  "material-closeup",
+  "wireframe-density",
+  "normal-debug",
+  "lod-comparison",
+  "collision-proxy",
+  "scale-reference",
+] as const;
+
 const MCP_ADMIN_ANALYTICS_QUERY_SUPPORT = [
   {
     metric: "totalEvents",
@@ -398,6 +453,36 @@ const capabilitySourceField = (
       required: false,
     }),
   }, options);
+
+const assetJobStatusField = (
+  description = "Governed asset job status."
+): McpFieldShape =>
+  objectField(description, {
+    jobId: stringField("Stable asset job identifier."),
+    assetId: stringField("Canonical asset identifier.", { required: false }),
+    state: stringField("Current governed pipeline state."),
+    sourceAdapter: stringField("Pipeline source adapter for the job.", { required: false }),
+    requiredCapability: stringField("Capability required to mutate this job.", { required: false }),
+    auditTargetId: stringField("Audit target id for follow-up verification.", { required: false }),
+  });
+
+const assetCatalogResultField = (
+  description = "Promoted asset catalog result."
+): McpFieldShape =>
+  objectField(description, {
+    assetId: stringField("Promoted asset identifier."),
+    version: stringField("Promoted immutable asset version."),
+    displayName: stringField("Human-readable asset name."),
+    runtimeManifestUri: stringField("Player-safe promoted runtime manifest URI."),
+    attributionRequired: booleanField("Whether runtime attribution is required."),
+    screenshotUri: stringField("Representative promoted screenshot URI.", { required: false }),
+  });
+
+const assetOperationAcceptedOutput = {
+  accepted: booleanField("Whether the hosted backend accepted the governed operation."),
+  job: assetJobStatusField("Governed asset job created or updated by the operation."),
+  nextAction: stringField("Next expected lifecycle action.", { required: false }),
+} satisfies Record<string, McpFieldShape>;
 
 export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   {
@@ -1165,6 +1250,337 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       ),
     },
   },
+  {
+    name: "searchAssetCatalog",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionSearchAssetCatalog),
+    domain: "assetCatalog",
+    rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "GET",
+      path: "/api/mcp/assets/catalog",
+      source: "existing-route",
+      notes: [
+        "Searches only promoted catalog records and never performs live third-party lookup.",
+        `Requires capability \`${MCP_ASSET_CATALOG_REQUEST_CAPABILITY}\`.`,
+      ],
+    },
+    input: {
+      query: stringField("Search text for promoted catalog records.", { required: true }),
+      locale: stringField("Locale for search normalization.", { required: false }),
+      limit: numberField("Maximum promoted catalog records to return.", { required: false }),
+    },
+    output: {
+      items: arrayField("Promoted catalog results only.", "AssetCatalogResult"),
+      capability: stringField(
+        `Capability required to use this catalog read: \`${MCP_ASSET_CATALOG_REQUEST_CAPABILITY}\`.`,
+      ),
+    },
+  },
+  {
+    name: "getAssetManifest",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionGetAssetManifest),
+    domain: "assetCatalog",
+    rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "GET",
+      path: "/api/mcp/assets/catalog/{assetId}/manifest",
+      source: "existing-route",
+      notes: [
+        "Returns promoted runtime manifest references only; raw source URLs remain private.",
+      ],
+    },
+    input: {
+      assetId: stringField("Promoted asset identifier.", { required: true }),
+      version: stringField("Optional immutable version; defaults to the current promoted version.", {
+        required: false,
+      }),
+    },
+    output: {
+      item: assetCatalogResultField("Promoted manifest lookup result."),
+      capability: stringField(
+        `Capability required to use this manifest read: \`${MCP_ASSET_CATALOG_REQUEST_CAPABILITY}\`.`,
+      ),
+    },
+  },
+  {
+    name: "requestAsset",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionRequestAsset),
+    domain: "assetCatalog",
+    rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "POST",
+      path: "/api/mcp/assets/requests",
+      source: "existing-route",
+      notes: [
+        "Queues a governed missing-asset request instead of resolving through live external source lookup.",
+      ],
+    },
+    input: {
+      requestedObjectText: stringField("Natural-language object request with no direct external URLs.", {
+        required: true,
+      }),
+      locale: stringField("Requester locale.", { required: true }),
+      requesterId: stringField("Requester or session identifier.", { required: true }),
+      playerContext: stringField("Optional bounded player/context note.", { required: false }),
+    },
+    output: assetOperationAcceptedOutput,
+  },
+  {
+    name: "searchAssetSources",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionSearchAssetSources),
+    domain: "assetSource",
+    rolloutFlag: MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "GET",
+      path: "/api/mcp/assets/sources",
+      source: "existing-route",
+      notes: [
+        `Tier-0 source adapters only: ${formatInlineCodeList(MCP_ASSET_SOURCE_ADAPTERS)}.`,
+        "Results expose source metadata and license status, not raw download URLs.",
+      ],
+    },
+    input: {
+      query: stringField("Search text for approved external source registries.", { required: true }),
+      sourceId: stringField("Optional Tier-0 source adapter filter.", {
+        required: false,
+        enum: MCP_ASSET_SOURCE_ADAPTERS,
+      }),
+      limit: numberField("Maximum source candidates to return.", { required: false }),
+    },
+    output: {
+      items: arrayField("Approved source candidates without raw download URLs.", "AssetSourceCandidate"),
+      adapters: arrayField("Enabled Tier-0 source adapter identifiers.", "string", {
+        enum: MCP_ASSET_SOURCE_ADAPTERS,
+      }),
+      capability: stringField(
+        `Capability required to use source discovery: \`${MCP_ASSET_SOURCE_MANAGE_CAPABILITY}\`.`,
+      ),
+    },
+  },
+  {
+    name: "stageAssetSource",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionStageAssetSource),
+    domain: "assetSource",
+    rolloutFlag: MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "POST",
+      path: "/api/mcp/assets/sources/stage",
+      source: "existing-route",
+      notes: [
+        "Stages one source candidate for governed license and metadata review before processing.",
+      ],
+    },
+    input: {
+      sourceId: stringField("Tier-0 source adapter identifier.", {
+        required: true,
+        enum: MCP_ASSET_SOURCE_ADAPTERS,
+      }),
+      sourceAssetId: stringField("Adapter-local source asset identifier.", { required: true }),
+      requestedBy: stringField("Operator or service identity requesting staging.", { required: true }),
+    },
+    output: assetOperationAcceptedOutput,
+  },
+  {
+    name: "createAssetJob",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionCreateAssetJob),
+    domain: "assetPipeline",
+    rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "POST",
+      path: "/api/mcp/assets/jobs",
+      source: "existing-route",
+      notes: [
+        `Requires capability \`${MCP_ASSET_PIPELINE_MANAGE_CAPABILITY}\`.`,
+      ],
+    },
+    input: {
+      assetId: stringField("Canonical target asset identifier.", { required: true }),
+      sourceAdapter: stringField("Pipeline source adapter.", {
+        required: true,
+        enum: ["local-import", "ai-generate", "ai-modify", "texture-regenerate", "processor-retry", "external-import"],
+      }),
+      requestedBy: stringField("Operator or service identity creating the job.", { required: true }),
+    },
+    output: assetOperationAcceptedOutput,
+  },
+  {
+    name: "uploadAssetSource",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionUploadAssetSource),
+    domain: "assetPipeline",
+    rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "POST",
+      path: "/api/mcp/assets/jobs/{jobId}/sources",
+      source: "existing-route",
+    },
+    input: {
+      jobId: stringField("Asset job identifier.", { required: true }),
+      sourceBlobUri: stringField("Private staged blob URI or approved blob reference.", { required: true }),
+      sha256: stringField("Lowercase source artifact sha256 digest.", { required: false }),
+      contentType: stringField("Source content type.", { required: false }),
+    },
+    output: assetOperationAcceptedOutput,
+  },
+  {
+    name: "processAssetJob",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionProcessAssetJob),
+    domain: "assetPipeline",
+    rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "POST",
+      path: "/api/mcp/assets/jobs/{jobId}/process",
+      source: "existing-route",
+      notes: [
+        `Allowed operation set: ${formatInlineCodeList(MCP_ASSET_PROCESSING_OPERATIONS)}.`,
+      ],
+    },
+    input: {
+      jobId: stringField("Asset job identifier.", { required: true }),
+      operations: arrayField("Optional subset of approved processing operations.", "string", {
+        required: false,
+        enum: MCP_ASSET_PROCESSING_OPERATIONS,
+      }),
+      targetRuntime: stringField("Runtime target for packaged artifacts.", {
+        required: false,
+        enum: ["gpu-shared", "game-runtime"],
+      }),
+    },
+    output: assetOperationAcceptedOutput,
+  },
+  {
+    name: "renderAssetReview",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionRenderAssetReview),
+    domain: "assetReview",
+    rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "POST",
+      path: "/api/mcp/assets/jobs/{jobId}/review/render",
+      source: "existing-route",
+      notes: [
+        `Review capture kinds are registry bounded: ${formatInlineCodeList(MCP_ASSET_REVIEW_KINDS)}.`,
+      ],
+    },
+    input: {
+      jobId: stringField("Asset job identifier.", { required: true }),
+      captureKinds: arrayField("Optional review capture kinds to request.", "string", {
+        required: false,
+        enum: MCP_ASSET_REVIEW_KINDS,
+      }),
+    },
+    output: assetOperationAcceptedOutput,
+  },
+  {
+    name: "reviewAssetCandidate",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionReviewAssetCandidate),
+    domain: "assetReview",
+    rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "POST",
+      path: "/api/mcp/assets/jobs/{jobId}/review",
+      source: "existing-route",
+    },
+    input: {
+      jobId: stringField("Asset job identifier.", { required: true }),
+      decision: stringField("Review decision.", {
+        required: true,
+        enum: ["approved", "rejected", "needs-changes"],
+      }),
+      summary: stringField("Human-readable review summary.", { required: true }),
+    },
+    output: assetOperationAcceptedOutput,
+  },
+  {
+    name: "promoteAsset",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionPromoteAsset),
+    domain: "assetReview",
+    rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "POST",
+      path: "/api/mcp/assets/jobs/{jobId}/promote",
+      source: "existing-route",
+      notes: [
+        "Promotion requires manifest, review report, screenshot evidence, approval, runtime manifest URI, and license eligibility.",
+      ],
+    },
+    input: {
+      jobId: stringField("Asset job identifier.", { required: true }),
+      runtimeChannel: stringField("Runtime channel receiving the immutable manifest reference.", {
+        required: true,
+      }),
+      approvedBy: stringField("Approver identity.", { required: true }),
+    },
+    output: assetOperationAcceptedOutput,
+    verification: {
+      method: "GET",
+      path: "/api/ops/audit/events",
+      query: ["family=admin.asset-promotion.update", "targetId={jobId}"],
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.verificationPromoteAsset,
+      ),
+    },
+  },
+  {
+    name: "rollbackAsset",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionRollbackAsset),
+    domain: "assetReview",
+    rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "POST",
+      path: "/api/mcp/assets/{assetId}/rollback",
+      source: "existing-route",
+    },
+    input: {
+      assetId: stringField("Promoted asset identifier.", { required: true }),
+      targetVersion: stringField("Previously promoted immutable version to restore.", {
+        required: true,
+      }),
+      runtimeChannel: stringField("Runtime channel to roll back.", { required: true }),
+      destructiveConfirmationToken: stringField("Destructive confirmation token for rollback.", {
+        required: true,
+      }),
+    },
+    output: assetOperationAcceptedOutput,
+    verification: {
+      method: "GET",
+      path: "/api/ops/audit/events",
+      query: ["family=admin.asset-promotion.update", "targetId={assetId}"],
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.verificationRollbackAsset,
+      ),
+    },
+  },
+  {
+    name: "getAssetJobStatus",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionGetAssetJobStatus),
+    domain: "assetPipeline",
+    rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+    availability: "existing",
+    execution: {
+      method: "GET",
+      path: "/api/mcp/assets/jobs/{jobId}",
+      source: "existing-route",
+    },
+    input: {
+      jobId: stringField("Asset job identifier.", { required: true }),
+    },
+    output: {
+      job: assetJobStatusField(),
+      plannedOperations: arrayField("Processing or review operations planned for the job.", "string"),
+      evidence: arrayField("Review and processing evidence references available to the caller.", "AssetEvidence"),
+    },
+  },
 ] as const;
 
 export function listMcpActionSummaries(): McpActionSummary[] {
@@ -1335,6 +1751,26 @@ function buildMcpActionFamilies(): McpContextResponse["actionFamilies"] {
       domain: "userAggregation",
       rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
       actions: getActionsByDomain("userAggregation"),
+    },
+    {
+      domain: "assetCatalog",
+      rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+      actions: getActionsByDomain("assetCatalog"),
+    },
+    {
+      domain: "assetSource",
+      rolloutFlag: MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID,
+      actions: getActionsByDomain("assetSource"),
+    },
+    {
+      domain: "assetPipeline",
+      rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+      actions: getActionsByDomain("assetPipeline"),
+    },
+    {
+      domain: "assetReview",
+      rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
+      actions: getActionsByDomain("assetReview"),
     },
     {
       domain: "productionReadiness",
