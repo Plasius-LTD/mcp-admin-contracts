@@ -50,6 +50,8 @@ The exported registry currently covers:
 - capability-rule and effective-capability descriptors keyed by canonical tuple identities
 - bounded analytics queries and curated analytics presets
 - bounded grouped user-aggregation summaries without raw per-user export
+- governed asset catalog, source-intake, pipeline, and review descriptors for
+  the hosted `plasius-ltd-site` MCP backend
 
 Action descriptors keep their existing `description` field and also expose
 `descriptionKey` and `descriptionDefault` so clients can resolve display text

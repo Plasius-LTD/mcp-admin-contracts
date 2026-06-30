@@ -43,6 +43,32 @@ export const mcpAdminContractsEnGbTranslations = {
     "Run grouped user aggregation over the bounded admin user data surface.",
   "mcpAdminContracts.action.aggregateUsersByPreset.description":
     "Run a curated user-aggregation preset against the bounded aggregation route.",
+  "mcpAdminContracts.action.searchAssetCatalog.description":
+    "Search promoted asset catalog records without live third-party lookup.",
+  "mcpAdminContracts.action.getAssetManifest.description":
+    "Fetch a promoted player-safe runtime asset manifest reference.",
+  "mcpAdminContracts.action.requestAsset.description":
+    "Queue a governed missing-asset request when no promoted catalog match exists.",
+  "mcpAdminContracts.action.searchAssetSources.description":
+    "Search approved external source registries for candidate assets without exposing raw download URLs.",
+  "mcpAdminContracts.action.stageAssetSource.description":
+    "Stage one approved external asset source for governed intake and license review.",
+  "mcpAdminContracts.action.createAssetJob.description":
+    "Create a governed asset pipeline job under the hosted backend MCP surface.",
+  "mcpAdminContracts.action.uploadAssetSource.description":
+    "Attach source blob references or uploaded source descriptors to an asset job.",
+  "mcpAdminContracts.action.processAssetJob.description":
+    "Queue validation, metadata cleanup, conversion, LOD, collision, texture, and packaging work for an asset job.",
+  "mcpAdminContracts.action.renderAssetReview.description":
+    "Queue deterministic review screenshot capture and debug evidence generation for an asset job.",
+  "mcpAdminContracts.action.reviewAssetCandidate.description":
+    "Record an asset review decision without bypassing promotion preconditions.",
+  "mcpAdminContracts.action.promoteAsset.description":
+    "Promote an approved asset candidate to an immutable runtime manifest reference.",
+  "mcpAdminContracts.action.rollbackAsset.description":
+    "Rollback an asset runtime channel to a previous promoted manifest version.",
+  "mcpAdminContracts.action.getAssetJobStatus.description":
+    "Read governed asset job status, planned processing work, and evidence references.",
   "mcpAdminContracts.verification.enableFeatureFlag.description":
     "Use admin audit history to verify the rollout change.",
   "mcpAdminContracts.verification.disableFeatureFlag.description":
@@ -53,4 +79,8 @@ export const mcpAdminContractsEnGbTranslations = {
     "Use admin audit history to verify capability-rule deletion.",
   "mcpAdminContracts.verification.updateCapability.description":
     "Use admin audit history to verify the stored rule updated by the capability mutation.",
+  "mcpAdminContracts.verification.promoteAsset.description":
+    "Use asset promotion history and admin audit events to verify the immutable runtime manifest promotion.",
+  "mcpAdminContracts.verification.rollbackAsset.description":
+    "Use asset promotion history and admin audit events to verify the runtime channel rollback.",
 } as const satisfies Record<McpAdminContractDescriptionKey, string>;
