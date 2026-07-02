@@ -6,6 +6,20 @@
   - (placeholder)
 
 - **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.2.8] - 2026-07-02
+
+- **Added**
+  - (placeholder)
+
+- **Changed**
   - Deprecated legacy MCP admin env-name constants while preserving source compatibility; rollout action contracts continue to use stored feature-flag identifiers.
 
 - **Fixed**
@@ -79,3 +93,4 @@
 [0.2.5]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.5
 [0.2.6]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.6
 [0.2.7]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.7
+[0.2.8]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.8
