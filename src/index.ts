@@ -1629,7 +1629,9 @@ export const MCP_ADMIN_CONTEXT_SHAPE: Record<string, McpFieldShape> = {
     foundationFlagId: stringField("Primary feature flag protecting the discovery surface."),
     foundationEnabled: booleanField("Whether the discovery surface is enabled for the current runtime."),
     foundationSource: stringField("How the foundation flag was resolved."),
-    envOverride: stringField("Break-glass env override name for local or emergency use."),
+    envOverride: stringField(
+      "Deprecated legacy env override name retained for compatibility only; stored feature flags are the runtime rollout source of truth.",
+    ),
   }),
   actionFamilies: arrayField("Approved action families grouped by rollout domain.", "McpActionFamily"),
   extensionRules: objectField("Rules for extending the registry without changing the discovery shape.", {
