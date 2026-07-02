@@ -6,7 +6,7 @@
   - (placeholder)
 
 - **Changed**
-  - (placeholder)
+  - Deprecated legacy MCP admin env-name constants while preserving source compatibility; rollout action contracts continue to use stored feature-flag identifiers.
 
 - **Fixed**
   - (placeholder)

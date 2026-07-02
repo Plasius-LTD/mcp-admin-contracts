@@ -18,6 +18,10 @@ export const MCP_ADMIN_CONTRACT_VERSION = "2026-04-28.v3";
 export const MCP_ADMIN_REGISTRY_SOURCE = "@plasius/mcp-admin-contracts";
 
 export const MCP_ADMIN_FOUNDATION_FLAG_ID = "mcp.admin.foundation.enabled";
+/**
+ * @deprecated Runtime rollout decisions must come from stored feature flags.
+ * This env name is retained only for source compatibility with older hosts.
+ */
 export const MCP_ADMIN_FOUNDATION_ENV_VAR = "MCP_ADMIN_FOUNDATION_ENABLED";
 export const MCP_ADMIN_FOUNDATION_DISABLED_CODE = "MCP_ADMIN_FOUNDATION_DISABLED";
 
@@ -25,6 +29,10 @@ export const MCP_ADMIN_LIVEOPS_FLAG_ID = "mcp.admin.liveops-controls.enabled";
 export const MCP_ADMIN_ANALYTICS_FLAG_ID = "mcp.admin.analytics.enabled";
 export const MCP_ADMIN_PRODUCTION_READINESS_FLAG_ID =
   "mcp.admin.production-readiness.enabled";
+/**
+ * @deprecated Runtime rollout decisions must come from stored feature flags.
+ * This env name is retained only for source compatibility with older hosts.
+ */
 export const MCP_ADMIN_PRODUCTION_READINESS_ENV_VAR =
   "MCP_ADMIN_PRODUCTION_READINESS_ENABLED";
 export const MCP_ASSET_PIPELINE_FLAG_ID =
@@ -138,6 +146,10 @@ export interface McpRolloutContext {
   foundationFlagId: string;
   foundationEnabled: boolean;
   foundationSource: string;
+  /**
+   * @deprecated Legacy compatibility field. Hosts must not use this as a
+   * runtime rollout source of truth.
+   */
   envOverride: string;
 }
 
