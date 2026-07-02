@@ -17,6 +17,8 @@ import {
   MCP_ADMIN_CONTRACT_VERSION,
   MCP_ADMIN_FOUNDATION_ENV_VAR,
   MCP_ADMIN_FOUNDATION_FLAG_ID,
+  MCP_ADMIN_PRODUCTION_READINESS_ENV_VAR,
+  MCP_ADMIN_PRODUCTION_READINESS_FLAG_ID,
   MCP_ADMIN_REGISTRY_SOURCE,
   MCP_ASSET_CATALOG_REQUEST_CAPABILITY,
   MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID,
@@ -48,6 +50,33 @@ describe("MCP admin contracts", () => {
     });
     expect(response.actions.map((action) => action.name)).not.toContain("createPost");
     expect(response.actions.map((action) => action.name)).not.toContain("randomNumber");
+  });
+
+  it("keeps legacy env constants source-compatible without using them for action rollout", () => {
+    expect(MCP_ADMIN_FOUNDATION_ENV_VAR).toBe("MCP_ADMIN_FOUNDATION_ENABLED");
+    expect(MCP_ADMIN_PRODUCTION_READINESS_ENV_VAR).toBe(
+      "MCP_ADMIN_PRODUCTION_READINESS_ENABLED",
+    );
+
+    const schema = buildMcpSchemaResponse();
+    const actionRolloutFlags = Object.values(schema.actions).map(
+      (action) => action.rolloutFlag,
+    );
+
+    expect(MCP_ADMIN_PRODUCTION_READINESS_FLAG_ID).toBe(
+      "mcp.admin.production-readiness.enabled",
+    );
+    expect(
+      actionRolloutFlags.some((rolloutFlag) => rolloutFlag.endsWith(".enabled")),
+    ).toBe(true);
+    expect(
+      actionRolloutFlags.some((rolloutFlag) => rolloutFlag === MCP_ADMIN_FOUNDATION_ENV_VAR),
+    ).toBe(false);
+    expect(
+      actionRolloutFlags.some(
+        (rolloutFlag) => rolloutFlag === MCP_ADMIN_PRODUCTION_READINESS_ENV_VAR,
+      ),
+    ).toBe(false);
   });
 
   it("exposes action input and output shapes in the schema response", () => {

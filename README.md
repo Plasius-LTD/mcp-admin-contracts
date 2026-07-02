@@ -11,6 +11,7 @@ This package contains contract metadata only:
 - MCP schema/context/discovery response builders
 - AI plugin manifest builder
 - rollout flag identifiers used by the contract
+- deprecated legacy env-name constants retained for source compatibility only
 - analytics and bounded user-aggregation whitelist constants
 - TypeScript types for these payloads
 
@@ -26,6 +27,9 @@ It intentionally does not contain runtime enforcement:
 
 Consumers must continue to enforce authentication, authorization, rollout gates,
 rate limits, audit logging, and input validation in their own runtime boundary.
+Stored feature flags are the rollout source of truth; exported `*_ENV_VAR`
+constants are legacy compatibility names and must not be used as production
+runtime controls.
 
 ## Install
 
