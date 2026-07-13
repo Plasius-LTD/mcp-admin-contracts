@@ -61,7 +61,7 @@
   },
   "homepage": "https://github.com/Plasius-LTD/mcp-admin-contracts#readme",
   "peerDependencies": {
-    "@plasius/translations": "^1.0.17"
+    "@plasius/translations": "^1.0.23"
   },
   "peerDependenciesMeta": {
     "@plasius/translations": {
@@ -70,7 +70,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@plasius/translations": "^1.0.17",
+    "@plasius/translations": "^1.0.23",
     "@types/node": "^25.9.4",
     "@types/react": "^19.2.7",
     "@typescript-eslint/eslint-plugin": "^8.62.0",
