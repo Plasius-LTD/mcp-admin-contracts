@@ -7,6 +7,20 @@
 
 - **Changed**
   - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.2.9] - 2026-07-13
+
+- **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
   - Consume the RFC-remediated `@plasius/translations` release (task #39).
 
 - **Fixed**
@@ -95,3 +109,4 @@
 [0.2.6]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.6
 [0.2.7]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.7
 [0.2.8]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.8
+[0.2.9]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.9
