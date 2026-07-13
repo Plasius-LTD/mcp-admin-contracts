@@ -7,6 +7,7 @@
 
 - **Changed**
   - (placeholder)
+  - Consume the RFC-remediated `@plasius/translations` release (task #39).
 
 - **Fixed**
   - (placeholder)
