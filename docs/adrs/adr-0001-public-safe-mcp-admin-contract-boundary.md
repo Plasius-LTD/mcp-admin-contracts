@@ -15,9 +15,9 @@ logic.
 `@plasius/mcp-admin-contracts` contains only public-safe discovery metadata,
 types, flag identifiers, whitelist constants, and pure response builders for
 the approved feature-flag, capability, analytics, and bounded user-aggregation
-surfaces. Runtime systems remain responsible for session validation,
-authorization, rollout evaluation, rate limits, audit emission, persistence,
-and mutation execution.
+surfaces plus pseudonymous read-only Token reporting metadata. Runtime systems
+remain responsible for session validation, authorization, rollout evaluation,
+rate limits, audit emission, persistence, and execution.
 
 ## Consequences
 

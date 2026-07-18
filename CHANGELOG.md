@@ -3,16 +3,22 @@
 ## Unreleased
 
 - **Added**
-  - (placeholder)
+  - Added public-safe, read-only `list_admin_token_activity` and
+    `get_admin_token_trends` descriptors with bounded pseudonymous activity,
+    privacy-suppressed trends, and explainable anomaly metadata.
 
 - **Changed**
-  - (placeholder)
+  - Advanced the additive MCP Admin registry contract to `2026-07-18.v4` and
+    exposed action-level OAuth scope, capability, rollout, read-only, and
+    identity-resolution metadata.
 
 - **Fixed**
   - (placeholder)
 
 - **Security**
-  - (placeholder)
+  - Token reporting contracts exclude raw financial/identity identifiers,
+    provider-specific sources, small-cohort values, identity resolution, and
+    mutation actions.
 
 ## [0.3.1] - 2026-08-01
 

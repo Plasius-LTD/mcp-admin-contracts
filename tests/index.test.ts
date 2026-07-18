@@ -15,6 +15,14 @@ import {
   MCP_ADMIN_ANALYTICS_METRICS,
   MCP_ADMIN_ANALYTICS_PRESETS,
   MCP_ADMIN_CONTRACT_VERSION,
+  MCP_ACCESS_SCOPE,
+  MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+  ECONOMY_ADMIN_HISTORY_FLAG_ID,
+  MCP_ADMIN_ECONOMY_READ_CAPABILITY,
+  ECONOMY_FINANCE_OPERATIONS_VIEW_CAPABILITY,
+  MCP_ADMIN_TOKEN_ACTIVITY_SOURCES,
+  MCP_ADMIN_TOKEN_ACTIVITY_STATUSES,
+  MCP_ADMIN_TOKEN_ACTIVITY_TYPES,
   MCP_ADMIN_FOUNDATION_ENV_VAR,
   MCP_ADMIN_FOUNDATION_FLAG_ID,
   MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
@@ -45,6 +53,12 @@ describe("MCP admin contracts", () => {
     expect(response.actions.map((action) => action.name)).toContain("listFeatureFlags");
     expect(response.actions.map((action) => action.name)).toContain("searchAssetCatalog");
     expect(response.actions.map((action) => action.name)).toContain("promoteAsset");
+    expect(response.actions.map((action) => action.name)).toContain(
+      "list_admin_token_activity",
+    );
+    expect(response.actions.map((action) => action.name)).toContain(
+      "get_admin_token_trends",
+    );
     expect(response.actions[0]).toMatchObject({
       descriptionKey: mcpAdminContractDescriptionKeys.actionListFeatureFlags,
       descriptionDefault:
@@ -54,6 +68,146 @@ describe("MCP admin contracts", () => {
     });
     expect(response.actions.map((action) => action.name)).not.toContain("createPost");
     expect(response.actions.map((action) => action.name)).not.toContain("randomNumber");
+  });
+
+  it("publishes bounded read-only Token activity and trend descriptors", () => {
+    const schema = buildMcpSchemaResponse();
+    const activity = schema.actions.list_admin_token_activity!;
+    const trends = schema.actions.get_admin_token_trends!;
+    const discoveryActivity = buildMcpDiscoveryResponse().actions.find(
+      (action) => action.name === "list_admin_token_activity",
+    );
+
+    expect(activity).toMatchObject({
+      domain: "economy",
+      rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+      availability: "near-future",
+      execution: {
+        method: "GET",
+        path: "/api/mcp/economy/token-activity",
+        source: "near-future-route",
+      },
+      access: {
+        oauthScopes: [MCP_ACCESS_SCOPE],
+        capabilities: [
+          MCP_ADMIN_ECONOMY_READ_CAPABILITY,
+          ECONOMY_FINANCE_OPERATIONS_VIEW_CAPABILITY,
+        ],
+        rolloutFlags: [
+          ECONOMY_ADMIN_HISTORY_FLAG_ID,
+          MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+        ],
+        mode: "read-only",
+        identityResolution: "not-available",
+      },
+    });
+    expect(discoveryActivity?.access).toEqual(activity.access);
+    expect(activity.input.limit).toMatchObject({
+      minimum: 1,
+      maximum: 100,
+      default: 100,
+    });
+    expect(activity.input.lookbackDays).toMatchObject({
+      minimum: 1,
+      maximum: 365,
+      default: 30,
+    });
+    expect(activity.input.activityTypes?.enum).toEqual(
+      MCP_ADMIN_TOKEN_ACTIVITY_TYPES,
+    );
+    expect(activity.input.statuses?.enum).toEqual(
+      MCP_ADMIN_TOKEN_ACTIVITY_STATUSES,
+    );
+    expect(activity.input.sources?.enum).toEqual(
+      MCP_ADMIN_TOKEN_ACTIVITY_SOURCES,
+    );
+    expect(MCP_ADMIN_TOKEN_ACTIVITY_SOURCES.join(" ")).not.toMatch(
+      /shopify|ayet|bitlabs/u,
+    );
+    expect(activity.output.items?.items?.properties).toEqual(
+      expect.objectContaining({
+        occurredAt: expect.any(Object),
+        activityType: expect.any(Object),
+        status: expect.any(Object),
+        source: expect.any(Object),
+        amount: expect.any(Object),
+        safeLabel: expect.any(Object),
+        rowAlias: expect.any(Object),
+        subjectAlias: expect.any(Object),
+      }),
+    );
+    expect(activity.output.items?.maxItems).toBe(100);
+    expect(
+      Object.keys(activity.output.items?.items?.properties ?? {}),
+    ).not.toEqual(
+      expect.arrayContaining([
+        "accountId",
+        "walletId",
+        "transactionId",
+        "orderId",
+        "providerEventId",
+        "idempotencyKey",
+      ]),
+    );
+    expect(activity.output.metadata?.properties).toMatchObject({
+      audience: expect.objectContaining({ enum: ["mcp-token-activity"] }),
+      pseudonymVersion: expect.any(Object),
+      rawIdentifiersIncluded: expect.objectContaining({ default: false }),
+    });
+
+    expect(trends).toMatchObject({
+      domain: "economy",
+      rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+      access: activity.access,
+      execution: {
+        method: "GET",
+        path: "/api/mcp/economy/token-trends",
+        source: "near-future-route",
+      },
+    });
+    expect(trends.input.granularity?.enum).toEqual(["hour", "day"]);
+    expect(trends.output.series?.maxItems).toBe(1_000);
+    expect(trends.output.series?.items?.properties).toMatchObject({
+      bucketStart: expect.any(Object),
+      bucketEnd: expect.any(Object),
+      activityType: expect.objectContaining({
+        enum: MCP_ADMIN_TOKEN_ACTIVITY_TYPES,
+      }),
+      aggregate: expect.objectContaining({
+        properties: expect.objectContaining({
+          visibility: expect.objectContaining({
+            enum: ["reported", "suppressed"],
+          }),
+          signedAmount: expect.any(Object),
+        }),
+      }),
+      anomaly: expect.objectContaining({
+        properties: expect.objectContaining({
+          method: expect.objectContaining({
+            enum: ["same-window-median-mad-v1"],
+          }),
+          status: expect.objectContaining({
+            enum: ["normal", "irregular-spike"],
+          }),
+        }),
+      }),
+    });
+    expect(trends.output.metadata?.properties).toMatchObject({
+      minimumCohortSize: expect.objectContaining({
+        minimum: 5,
+        maximum: 5,
+        default: 5,
+      }),
+      anomalyBaselineDays: expect.objectContaining({
+        minimum: 28,
+        maximum: 28,
+        default: 28,
+      }),
+      rawIdentifiersIncluded: expect.objectContaining({ default: false }),
+    });
+    expect(Object.keys(schema.actions)).not.toContain(
+      "resolve_admin_token_subject",
+    );
   });
 
   it("keeps legacy env constants source-compatible without using them for action rollout", () => {
@@ -327,8 +481,53 @@ describe("MCP admin contracts", () => {
             "reverseTokenCredit",
           ],
         }),
+        expect.objectContaining({
+          domain: "economy",
+          rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+          actions: [
+            "list_admin_token_activity",
+            "get_admin_token_trends",
+          ],
+        }),
       ]),
     );
+  });
+
+  it("fails safe when optional authenticated context fields are absent or blank", () => {
+    const base = {
+      origin: "https://plasius.co.uk",
+      rollout: {
+        foundationFlagId: MCP_ADMIN_FOUNDATION_FLAG_ID,
+        foundationEnabled: false,
+        foundationSource: "feature-flag",
+        envOverride: MCP_ADMIN_FOUNDATION_ENV_VAR,
+      },
+    };
+
+    expect(buildMcpContextResponse(base).authenticatedUser).toEqual({
+      id: "unknown-admin",
+      name: "Unknown Admin",
+      email: undefined,
+      provider: "unknown",
+      groups: [],
+    });
+    expect(
+      buildMcpContextResponse({
+        ...base,
+        authenticatedUser: {
+          id: " ",
+          name: "\t",
+          email: "\n",
+          provider: "",
+        },
+      }).authenticatedUser,
+    ).toEqual({
+      id: "unknown-admin",
+      name: "Unknown Admin",
+      email: undefined,
+      provider: "unknown",
+      groups: [],
+    });
   });
 
   it("builds the approved plugin manifest from the request origin", () => {
@@ -351,6 +550,7 @@ describe("MCP admin contracts", () => {
       auth: {
         type: "oauth",
         client_url: "https://plasius.co.uk/api/login",
+        scope: expect.stringContaining(MCP_ACCESS_SCOPE),
       },
     });
   });

@@ -18,6 +18,7 @@ export const MCP_ADMIN_CONTRACT_VERSION = "2026-04-28.v4";
 export const MCP_ADMIN_REGISTRY_SOURCE = "@plasius/mcp-admin-contracts";
 
 export const MCP_ADMIN_FOUNDATION_FLAG_ID = "mcp.admin.foundation.enabled";
+export const MCP_ACCESS_SCOPE = "mcp:access";
 /**
  * @deprecated Runtime rollout decisions must come from stored feature flags.
  * This env name is retained only for source compatibility with older hosts.
@@ -27,6 +28,12 @@ export const MCP_ADMIN_FOUNDATION_DISABLED_CODE = "MCP_ADMIN_FOUNDATION_DISABLED
 
 export const MCP_ADMIN_LIVEOPS_FLAG_ID = "mcp.admin.liveops-controls.enabled";
 export const MCP_ADMIN_ANALYTICS_FLAG_ID = "mcp.admin.analytics.enabled";
+export const ECONOMY_ADMIN_HISTORY_FLAG_ID = "economy.admin-history.enabled";
+export const MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID =
+  "mcp.admin-economy-history.enabled";
+export const MCP_ADMIN_ECONOMY_READ_CAPABILITY = "admin.economy.read";
+export const ECONOMY_FINANCE_OPERATIONS_VIEW_CAPABILITY =
+  "economy.finance-operations.view";
 export const MCP_ADMIN_PRODUCTION_READINESS_FLAG_ID =
   "mcp.admin.production-readiness.enabled";
 /**
@@ -82,7 +89,14 @@ export interface McpFieldShape {
   required?: boolean;
   enum?: readonly string[];
   itemType?: string;
+  items?: McpFieldShape;
   properties?: Record<string, McpFieldShape>;
+  format?: string;
+  minimum?: number;
+  maximum?: number;
+  minItems?: number;
+  maxItems?: number;
+  default?: string | number | boolean;
 }
 
 export interface McpActionExecution {
@@ -106,6 +120,7 @@ export type McpActionDomain =
   | "capabilities"
   | "analytics"
   | "userAggregation"
+  | "economy"
   | "assetCatalog"
   | "assetPipeline"
   | "assetSource"
@@ -113,6 +128,17 @@ export type McpActionDomain =
   | "economyAdjustments";
 
 export type McpActionFamilyDomain = McpActionDomain | "productionReadiness";
+
+export interface McpActionAccessRequirements {
+  /** OAuth scopes re-checked by the consuming runtime. */
+  oauthScopes: readonly string[];
+  /** Product capabilities re-resolved for the mapped MCP identity. */
+  capabilities: readonly string[];
+  /** Stored rollout flags that must all be enabled by the host. */
+  rolloutFlags: readonly string[];
+  mode: "read-only" | "mutation";
+  identityResolution: "not-available" | "separate-governed-operation";
+}
 
 export interface McpActionDescriptor {
   name: string;
@@ -127,6 +153,7 @@ export interface McpActionDescriptor {
   output: Record<string, McpFieldShape>;
   requiredCapability?: string;
   requiredTokenScopes?: readonly string[];
+  access?: McpActionAccessRequirements;
   verification?: McpActionVerification;
 }
 
@@ -141,6 +168,7 @@ export interface McpActionSummary {
   execution: McpActionExecution;
   requiredCapability?: string;
   requiredTokenScopes?: readonly string[];
+  access?: McpActionAccessRequirements;
 }
 
 export interface McpDiscoveryResponse {
@@ -210,6 +238,7 @@ export interface McpSchemaResponse {
       output: Record<string, McpFieldShape>;
       requiredCapability?: string;
       requiredTokenScopes?: readonly string[];
+      access?: McpActionAccessRequirements;
       verification?: McpActionVerification;
     }
   >;
@@ -323,6 +352,37 @@ export const MCP_ADMIN_USER_AGGREGATION_PRESETS = [
   "usersByAccountState",
   "usersByNotificationPreference",
   "usersByAccountAgeBand",
+] as const;
+
+export const MCP_ADMIN_TOKEN_ACTIVITY_TYPES = [
+  "acquisition",
+  "spend",
+  "reversal",
+  "hold",
+  "failure",
+] as const;
+
+export const MCP_ADMIN_TOKEN_ACTIVITY_STATUSES = [
+  "pending",
+  "held",
+  "settled",
+  "reversed",
+  "failed",
+] as const;
+
+/** Provider-neutral source groupings; provider names are intentionally absent. */
+export const MCP_ADMIN_TOKEN_ACTIVITY_SOURCES = [
+  "paid-purchase",
+  "subscription",
+  "rewarded-activity",
+  "gameplay",
+  "system-adjustment",
+  "unknown",
+] as const;
+
+export const MCP_ADMIN_TOKEN_ACTIVITY_SORTS = [
+  "occurred-at-desc",
+  "amount-absolute-desc",
 ] as const;
 
 export const MCP_ASSET_SOURCE_ADAPTERS = [
@@ -541,6 +601,168 @@ const tokenAdjustmentOutput = {
   }),
 } satisfies Record<string, McpFieldShape>;
 
+const adminEconomyReadAccess = {
+  oauthScopes: [MCP_ACCESS_SCOPE],
+  capabilities: [
+    MCP_ADMIN_ECONOMY_READ_CAPABILITY,
+    ECONOMY_FINANCE_OPERATIONS_VIEW_CAPABILITY,
+  ],
+  rolloutFlags: [
+    ECONOMY_ADMIN_HISTORY_FLAG_ID,
+    MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+  ],
+  mode: "read-only",
+  identityResolution: "not-available",
+} as const satisfies McpActionAccessRequirements;
+
+const adminTokenReportingWindowInput = {
+  lookbackDays: numberField(
+    "Optional whole-day lookback ending now; defaults to 30, cannot exceed 365, and hourly trend calls are further limited to 31. Do not combine with explicit timestamps.",
+    {
+      required: false,
+      minimum: 1,
+      maximum: 365,
+      default: 30,
+    },
+  ),
+  fromInclusive: stringField(
+    "Optional inclusive ISO-8601 UTC start; the normalized interactive window cannot exceed 365 days.",
+    { required: false, format: "date-time" },
+  ),
+  toExclusive: stringField(
+    "Optional exclusive ISO-8601 UTC end; defaults to the request time.",
+    { required: false, format: "date-time" },
+  ),
+} satisfies Record<string, McpFieldShape>;
+
+const adminTokenActivityEntryField = objectField(
+  "One pseudonymous Token activity row with no raw financial or identity identifiers.",
+  {
+    schemaVersion: stringField("Economy reporting contract version.", {
+      enum: ["1"],
+    }),
+    occurredAt: stringField("ISO-8601 UTC activity timestamp.", {
+      format: "date-time",
+    }),
+    activityType: stringField("Normalized Token activity type.", {
+      enum: MCP_ADMIN_TOKEN_ACTIVITY_TYPES,
+    }),
+    status: stringField("Normalized activity status.", {
+      enum: MCP_ADMIN_TOKEN_ACTIVITY_STATUSES,
+    }),
+    source: stringField(
+      "Provider-neutral source grouping; provider names and identifiers are excluded.",
+      { enum: MCP_ADMIN_TOKEN_ACTIVITY_SOURCES },
+    ),
+    amount: stringField(
+      "Exact signed TokenSubunit amount as a canonical base-10 integer string.",
+      { format: "int64-string" },
+    ),
+    safeLabel: stringField(
+      "Bounded source-owned display label with no account, payment, or provider metadata.",
+    ),
+    rowAlias: stringField(
+      "Versioned audience-separated opaque alias for this reporting row.",
+      { format: "pseudonymous-alias" },
+    ),
+    subjectAlias: stringField(
+      "Versioned audience-separated opaque alias for the activity subject.",
+      { format: "pseudonymous-alias" },
+    ),
+  },
+);
+
+const adminTokenAnomalyField = objectField(
+  "Explainable advisory indicator; it never triggers a financial mutation.",
+  {
+    method: stringField("Server-owned baseline method.", {
+      enum: ["same-window-median-mad-v1"],
+    }),
+    status: stringField("Advisory irregularity classification.", {
+      enum: ["normal", "irregular-spike"],
+    }),
+    baselineWindowCount: numberField(
+      "Count of preceding same-window samples used by the baseline.",
+      { minimum: 28, maximum: 28, default: 28 },
+    ),
+    medianAmount: stringField("Exact median signed TokenSubunit amount.", {
+      format: "int64-string",
+    }),
+    medianAbsoluteDeviation: stringField(
+      "Exact median absolute deviation in TokenSubunits.",
+      { format: "int64-string" },
+    ),
+    minimumAbsoluteDelta: stringField(
+      "Server-owned exact absolute minimum required before a spike is reported.",
+      { format: "int64-string" },
+    ),
+    deviationFromMedian: stringField(
+      "Exact signed TokenSubunit deviation from the baseline median.",
+      { format: "int64-string" },
+    ),
+    madMultiplierMilli: numberField(
+      "Fixed-point MAD multiplier where 1,000 represents one MAD.",
+      { minimum: 1, maximum: 1_000_000 },
+    ),
+    explanationCode: stringField("Stable explanation code for operator review."),
+  },
+  { required: false },
+);
+
+const adminTokenTrendPointField = objectField(
+  "One hourly or daily activity-type trend point.",
+  {
+    schemaVersion: stringField("Economy reporting contract version.", {
+      enum: ["1"],
+    }),
+    bucketStart: stringField("Inclusive aligned bucket start.", {
+      format: "date-time",
+    }),
+    bucketEnd: stringField("Exclusive aligned bucket end.", {
+      format: "date-time",
+    }),
+    activityType: stringField("Normalized Token activity type.", {
+      enum: MCP_ADMIN_TOKEN_ACTIVITY_TYPES,
+    }),
+    aggregate: objectField(
+      "Reported aggregate or a suppression marker. Suppressed points omit counts, amounts, and anomaly details.",
+      {
+        visibility: stringField("Privacy visibility state.", {
+          enum: ["reported", "suppressed"],
+        }),
+        reason: stringField(
+          "Present only when the cohort is suppressed.",
+          {
+            required: false,
+            enum: ["cohort-below-minimum"],
+          },
+        ),
+        distinctSubjects: numberField(
+          "Distinct pseudonymous subjects; present only for cohorts of at least five.",
+          { required: false, minimum: 5 },
+        ),
+        activityCount: numberField(
+          "Activity row count; absent for suppressed cohorts.",
+          { required: false, minimum: 5 },
+        ),
+        signedAmount: stringField(
+          "Exact aggregate signed TokenSubunits; absent for suppressed cohorts.",
+          { required: false, format: "int64-string" },
+        ),
+        threshold: numberField(
+          "Fixed minimum cohort size; present on suppression markers.",
+          {
+            required: false,
+            minimum: 5,
+            maximum: 5,
+            default: 5,
+          },
+        ),
+      },
+    ),
+    anomaly: adminTokenAnomalyField,
+  },
+);
 export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   {
     name: "listFeatureFlags",
@@ -1308,6 +1530,197 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     },
   },
   {
+    name: "list_admin_token_activity",
+    ...translatedDescription(
+      mcpAdminContractDescriptionKeys.actionListAdminTokenActivity,
+    ),
+    domain: "economy",
+    rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+    availability: "near-future",
+    access: adminEconomyReadAccess,
+    execution: {
+      method: "GET",
+      path: "/api/mcp/economy/token-activity",
+      source: "near-future-route",
+      notes: [
+        "The hosted site must register this descriptor as a JSON-RPC MCP tool; publishing this package does not create the runtime route.",
+        "Responses are private/no-store, bounded to 100 rows, and contain only audience-separated pseudonyms plus source-owned labels.",
+        "The tool is read-only and cannot resolve a pseudonym or mutate a financial record.",
+      ],
+    },
+    input: {
+      ...adminTokenReportingWindowInput,
+      limit: numberField("Maximum activity rows to return.", {
+        required: false,
+        minimum: 1,
+        maximum: 100,
+        default: 100,
+      }),
+      cursor: stringField(
+        "Opaque query-bound cursor returned by the preceding page.",
+        { required: false, format: "opaque-cursor" },
+      ),
+      activityTypes: arrayField(
+        "Optional allowlisted activity-type filters.",
+        "string",
+        {
+          required: false,
+          enum: MCP_ADMIN_TOKEN_ACTIVITY_TYPES,
+          maxItems: MCP_ADMIN_TOKEN_ACTIVITY_TYPES.length,
+        },
+      ),
+      statuses: arrayField("Optional allowlisted activity-status filters.", "string", {
+        required: false,
+        enum: MCP_ADMIN_TOKEN_ACTIVITY_STATUSES,
+        maxItems: MCP_ADMIN_TOKEN_ACTIVITY_STATUSES.length,
+      }),
+      sources: arrayField(
+        "Optional provider-neutral source-group filters.",
+        "string",
+        {
+          required: false,
+          enum: MCP_ADMIN_TOKEN_ACTIVITY_SOURCES,
+          maxItems: MCP_ADMIN_TOKEN_ACTIVITY_SOURCES.length,
+        },
+      ),
+      subjectAlias: stringField(
+        "Optional exact MCP-audience subject alias; raw account identifiers are not accepted.",
+        { required: false, format: "pseudonymous-alias" },
+      ),
+      sort: stringField("Allowlisted stable sort.", {
+        required: false,
+        enum: MCP_ADMIN_TOKEN_ACTIVITY_SORTS,
+        default: "occurred-at-desc",
+      }),
+    },
+    output: {
+      schemaVersion: stringField("Economy reporting contract version.", {
+        enum: ["1"],
+      }),
+      items: arrayField(
+        "Pseudonymous activity rows; no account, wallet, transaction, order, payment, provider-event, idempotency, or journal-integrity identifiers.",
+        "AdminTokenActivityEntryV1",
+        {
+          items: adminTokenActivityEntryField,
+          maxItems: 100,
+        },
+      ),
+      hasMore: booleanField("Whether another bounded page exists."),
+      nextCursor: stringField("Opaque cursor for the next page.", {
+        required: false,
+        format: "opaque-cursor",
+      }),
+      metadata: objectField("Privacy and normalized query metadata.", {
+        schemaVersion: stringField("Economy reporting contract version.", {
+          enum: ["1"],
+        }),
+        generatedAt: stringField("UTC time the result was generated.", {
+          format: "date-time",
+        }),
+        fromInclusive: stringField("Normalized inclusive UTC window start.", {
+          format: "date-time",
+        }),
+        toExclusive: stringField("Normalized exclusive UTC window end.", {
+          format: "date-time",
+        }),
+        sort: stringField("Applied stable sort.", {
+          enum: MCP_ADMIN_TOKEN_ACTIVITY_SORTS,
+        }),
+        pageLimit: numberField("Applied page bound.", {
+          minimum: 1,
+          maximum: 100,
+        }),
+        audience: stringField("Pseudonym audience fixed by the MCP endpoint.", {
+          enum: ["mcp-token-activity"],
+        }),
+        pseudonymVersion: stringField("Active opaque pseudonym key version."),
+        rawIdentifiersIncluded: booleanField(
+          "Always false for this public-safe contract.",
+          { default: false },
+        ),
+      }),
+    },
+  },
+  {
+    name: "get_admin_token_trends",
+    ...translatedDescription(
+      mcpAdminContractDescriptionKeys.actionGetAdminTokenTrends,
+    ),
+    domain: "economy",
+    rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+    availability: "near-future",
+    access: adminEconomyReadAccess,
+    execution: {
+      method: "GET",
+      path: "/api/mcp/economy/token-trends",
+      source: "near-future-route",
+      notes: [
+        "The hosted site must register this descriptor as a JSON-RPC MCP tool; publishing this package does not create the runtime route.",
+        "Cohorts below five are suppression markers with no counts, amounts, aliases, or anomaly details.",
+        "Anomalies are explainable review signals and never mutate financial records.",
+      ],
+    },
+    input: {
+      ...adminTokenReportingWindowInput,
+      granularity: stringField("Hourly or daily UTC aggregation.", {
+        required: false,
+        enum: ["hour", "day"],
+        default: "day",
+      }),
+      activityTypes: arrayField(
+        "Optional allowlisted trend activity types.",
+        "string",
+        {
+          required: false,
+          enum: MCP_ADMIN_TOKEN_ACTIVITY_TYPES,
+          maxItems: MCP_ADMIN_TOKEN_ACTIVITY_TYPES.length,
+        },
+      ),
+    },
+    output: {
+      schemaVersion: stringField("Economy reporting contract version.", {
+        enum: ["1"],
+      }),
+      series: arrayField(
+        "Bounded, stably ordered trend points.",
+        "AdminTokenTrendPointV1",
+        {
+          items: adminTokenTrendPointField,
+          maxItems: 1_000,
+        },
+      ),
+      metadata: objectField("Trend privacy and baseline metadata.", {
+        schemaVersion: stringField("Economy reporting contract version.", {
+          enum: ["1"],
+        }),
+        generatedAt: stringField("UTC time the result was generated.", {
+          format: "date-time",
+        }),
+        fromInclusive: stringField("Normalized inclusive UTC window start.", {
+          format: "date-time",
+        }),
+        toExclusive: stringField("Normalized exclusive UTC window end.", {
+          format: "date-time",
+        }),
+        granularity: stringField("Applied UTC aggregation granularity.", {
+          enum: ["hour", "day"],
+        }),
+        minimumCohortSize: numberField(
+          "Fixed minimum distinct-subject cohort before aggregate disclosure.",
+          { minimum: 5, maximum: 5, default: 5 },
+        ),
+        anomalyBaselineDays: numberField(
+          "Fixed same-window median/MAD baseline length.",
+          { minimum: 28, maximum: 28, default: 28 },
+        ),
+        rawIdentifiersIncluded: booleanField(
+          "Always false for this public-safe contract.",
+          { default: false },
+        ),
+      }),
+    },
+  },
+  {
     name: "searchAssetCatalog",
     ...translatedDescription(mcpAdminContractDescriptionKeys.actionSearchAssetCatalog),
     domain: "assetCatalog",
@@ -1900,6 +2313,7 @@ export function listMcpActionSummaries(): McpActionSummary[] {
     execution: action.execution,
     requiredCapability: action.requiredCapability,
     requiredTokenScopes: action.requiredTokenScopes,
+    access: action.access,
   }));
 }
 
@@ -1946,6 +2360,7 @@ export const MCP_ADMIN_EXTENSION_RULES = {
   notes: [
     "Future game/admin asset actions must reuse the same descriptor shape instead of adding a second discovery contract.",
     "New descriptors must define rolloutFlag, execution mapping, input shape, output shape, and verification notes where applicable.",
+    "Sensitive read descriptors must publish their OAuth scope, capability, rollout, read-only, and identity-resolution metadata without treating discovery as authorization.",
   ],
 };
 
@@ -1985,7 +2400,7 @@ export function buildAiPluginManifest(origin: string): AiPluginManifest {
       client_url: `${urls.apiBaseUrl}/login`,
       authorization_url: `${urls.apiBaseUrl}/oauth/authorize`,
       token_url: `${urls.apiBaseUrl}/oauth/token`,
-      scope: "openid email profile",
+      scope: `openid email profile ${MCP_ACCESS_SCOPE}`,
       authorization_content_type: "application/x-www-form-urlencoded",
       instructions:
         "Sign in with an admin-capable Google or Microsoft account to access the Plasius MCP control plane.",
@@ -2014,6 +2429,7 @@ export function buildMcpSchemaResponse(): McpSchemaResponse {
         output: action.output,
         requiredCapability: action.requiredCapability,
         requiredTokenScopes: action.requiredTokenScopes,
+        access: action.access,
         verification: action.verification,
       },
     ]),
@@ -2062,6 +2478,11 @@ function buildMcpActionFamilies(): McpContextResponse["actionFamilies"] {
       domain: "userAggregation",
       rolloutFlag: MCP_ADMIN_ANALYTICS_FLAG_ID,
       actions: getActionsByDomain("userAggregation"),
+    },
+    {
+      domain: "economy",
+      rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+      actions: getActionsByDomain("economy"),
     },
     {
       domain: "assetCatalog",
