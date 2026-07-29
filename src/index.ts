@@ -78,9 +78,18 @@ export const MCP_ADMIN_FEEDBACK_PROCESSORS = [
   "commit-reconciliation",
 ] as const;
 export const MCP_ADMIN_FEEDBACK_PRIVACY_EXCLUSIONS = [
+  "account-identifiers",
   "reporter-pseudonyms",
+  "network-identifiers",
+  "session-identifiers",
+  "user-agents",
+  "locales",
+  "client-timestamps",
+  "referrers",
   "narrative",
   "binary-images",
+  "exact-coordinates",
+  "adapter-fingerprints",
   "blob-references",
   "raw-urls",
   "unrestricted-scans",

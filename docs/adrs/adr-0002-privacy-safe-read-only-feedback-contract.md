@@ -51,8 +51,10 @@ Every feedback descriptor carries:
 - required capability `admin.feedback.read`
 - complete action-level OAuth scopes `mcp:access` and `admin.feedback.read`
 - a `public-safe-structured-only` privacy classification
-- explicit exclusion of reporter pseudonyms, narrative, binary images, Blob
-  references, raw URLs, unrestricted scans, and mutations
+- explicit exclusion of account, reporter, network, session, user-agent,
+  locale, client-time, referrer, coordinate, and adapter identifiers, plus
+  narrative, binary images, Blob references, raw URLs, unrestricted scans,
+  and mutations
 
 Narrative-derived outputs are limited to closed sentiment, intent, and
 confidence buckets. Summaries, quotations, embeddings, hashes, matched values,
