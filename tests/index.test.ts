@@ -1000,6 +1000,9 @@ describe("MCP admin contracts", () => {
       "userAgent",
       "session",
       "locale",
+      "clientTimestamp",
+      "coordinates",
+      "adapterFingerprint",
     ];
 
     expect(feedbackActions).toHaveLength(MCP_ADMIN_FEEDBACK_ACTIONS.length);
@@ -1016,9 +1019,18 @@ describe("MCP admin contracts", () => {
     expect(
       MCP_ADMIN_FEEDBACK_PRIVACY_EXCLUSIONS,
     ).toEqual([
+      "account-identifiers",
       "reporter-pseudonyms",
+      "network-identifiers",
+      "session-identifiers",
+      "user-agents",
+      "locales",
+      "client-timestamps",
+      "referrers",
       "narrative",
       "binary-images",
+      "exact-coordinates",
+      "adapter-fingerprints",
       "blob-references",
       "raw-urls",
       "unrestricted-scans",

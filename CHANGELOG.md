@@ -27,6 +27,8 @@
   - Closed every feedback-specific input and output object projection with
     `additionalProperties: false` so undeclared fields cannot cross the
     Admin/MCP contract boundary.
+  - Made account, network, session, user-agent, locale, client-time, referrer,
+    coordinate, and adapter-identity exclusions machine-readable.
   - Kept narrative, reporter correlation, binary images, storage references,
     raw URLs, unrestricted scans, and mutations outside the public contract.
   - Raised transitive `brace-expansion`, `nanoid`, and `postcss` override

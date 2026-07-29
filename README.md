@@ -160,8 +160,10 @@ literals with direct package imports, and rerun the full test, coverage, build,
 pack, and audit gates. Source, file, Git, or unpublished semver dependency pins
 are prohibited.
 
-The contracts explicitly exclude reporter pseudonyms, narrative, binary
-images, Blob references, raw URLs, unrestricted scans, and mutations.
+The contracts explicitly exclude account, reporter, network, session,
+user-agent, locale, client-time, referrer, coordinate, and adapter identifiers;
+they also exclude narrative, binary images, Blob references, raw URLs,
+unrestricted scans, and mutations.
 Narrative-derived data is limited to closed classifications; it cannot include
 summaries, quotations, embeddings, hashes, matched values, or model traces.
 Renderer diagnostics are bounded structured facts only and never
