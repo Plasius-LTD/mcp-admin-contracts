@@ -3,15 +3,31 @@
 ## Unreleased
 
 - **Added**
-  - (placeholder)
+  - Added a privacy-safe, read-only `feedback` domain for bounded bug health,
+    satisfaction, deterministic alerts, processor freshness, and
+    reporter-identifier-free structured feedback entries.
+  - Added stable `feedback.mcp.enabled` rollout and `admin.feedback.read`
+    capability metadata, complete action-level `mcp:access` plus
+    `admin.feedback.read` OAuth scope metadata, en-GB descriptions, and
+    machine-readable privacy exclusions and bounds.
+  - Added canonical `@plasius/schema` packet, aggregate, advisory, diagnostics,
+    and processor-checkpoint projections with pinned parity coverage.
 
 - **Changed**
-  - (placeholder)
+  - Bumped the MCP admin discovery contract to `2026-07-29.v4`; the global
+    plugin manifest retains its existing base scopes until site OAuth issuer
+    coordination is complete.
+  - Modelled structured-entry filters as exact `packetType` variants so bug
+    and review filters cannot be combined, and documented the released
+    `@plasius/schema ^1.4.0` direct-consumption release gate.
 
 - **Fixed**
   - (placeholder)
 
 - **Security**
+  - Closed every feedback-specific input and output object projection with
+    `additionalProperties: false` so undeclared fields cannot cross the
+    Admin/MCP contract boundary.
   - Replaced token-based npm publication with a two-phase exact-main OIDC workflow, immutable tarball/SBOM hand-off, isolated pull-request validation, and fail-closed integrity checks.
   - Added fail-closed source and npm-package admission for the administrative contributor registry and pinned the CI/CD runtime to Node.js 24.18.0 LTS.
   - (placeholder)
