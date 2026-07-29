@@ -46,6 +46,16 @@ export const mcpAdminContractDescriptionKeys = {
     "mcpAdminContracts.action.listAdminTokenWalletBalances.description",
   actionGetAdminTokenTrends:
     "mcpAdminContracts.action.getAdminTokenTrends.description",
+  actionGetFeedbackBugHealth:
+    "mcpAdminContracts.action.getFeedbackBugHealth.description",
+  actionGetFeedbackSatisfaction:
+    "mcpAdminContracts.action.getFeedbackSatisfaction.description",
+  actionListFeedbackAlerts:
+    "mcpAdminContracts.action.listFeedbackAlerts.description",
+  actionGetFeedbackFreshness:
+    "mcpAdminContracts.action.getFeedbackFreshness.description",
+  actionListFeedbackStructuredEntries:
+    "mcpAdminContracts.action.listFeedbackStructuredEntries.description",
   actionSearchAssetCatalog:
     "mcpAdminContracts.action.searchAssetCatalog.description",
   actionGetAssetManifest:

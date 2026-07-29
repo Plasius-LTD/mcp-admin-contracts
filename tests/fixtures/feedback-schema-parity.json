@@ -1,0 +1,262 @@
+{
+  "sourcePackage": "@plasius/schema",
+  "sourceCommit": "172d993e0f9dc951716dc2ce46a753232c2ad1f7",
+  "sourceFile": "src/feedback.ts",
+  "sourceSha256": "2f4ff15dc52abed429c94a4330b4209c637075b0b8a4264e7bb584a909125b75",
+  "contractVersion": "1.0.0",
+  "uuidV4Pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+  "packetSchemas": {
+    "FeedbackBugPacketSchema": {
+      "type": "feedback-bug-packet",
+      "required": [
+        "type",
+        "version",
+        "packetId",
+        "acceptedAt",
+        "surfaceId",
+        "issueType",
+        "severity",
+        "releaseId",
+        "buildId"
+      ],
+      "optional": ["analysis", "gameDiagnostics"]
+    },
+    "FeedbackReviewPacketSchema": {
+      "type": "feedback-review-packet",
+      "required": [
+        "type",
+        "version",
+        "packetId",
+        "acceptedAt",
+        "satisfaction"
+      ],
+      "optional": ["analysis"]
+    }
+  },
+  "surfaceIds": [
+    "site.about",
+    "admin.analytics",
+    "admin.capabilities",
+    "admin.feature-flags",
+    "admin.feedback",
+    "admin.moderation",
+    "admin.users",
+    "site.chatbot",
+    "site.generator",
+    "site.gpu-demo",
+    "site.home",
+    "game.player-system",
+    "account.profile",
+    "site.video"
+  ],
+  "persistableIssueTypes": [
+    "visual-layout",
+    "functionality",
+    "gameplay",
+    "performance-stability",
+    "accessibility",
+    "content-localisation",
+    "account-access",
+    "other"
+  ],
+  "sentimentBuckets": [
+    "very-negative",
+    "negative",
+    "mixed",
+    "neutral",
+    "positive",
+    "very-positive",
+    "not-detected"
+  ],
+  "intentIds": [
+    "visual-layout",
+    "functionality",
+    "gameplay",
+    "performance-stability",
+    "accessibility",
+    "content-localisation",
+    "account-access",
+    "other",
+    "praise",
+    "suggestion",
+    "confusion",
+    "frustration"
+  ],
+  "themeIds": [
+    "navigation",
+    "visual-design",
+    "game-controls",
+    "rendering",
+    "responsiveness",
+    "stability",
+    "accessibility",
+    "localisation",
+    "account-access",
+    "overall-experience",
+    "other"
+  ],
+  "rendererBuckets": ["webgl2", "webgpu", "canvas2d", "unknown"],
+  "backendBuckets": ["browser", "worker", "unknown"],
+  "viewportBuckets": [
+    "small-portrait",
+    "small-landscape",
+    "medium-portrait",
+    "medium-landscape",
+    "large-portrait",
+    "large-landscape",
+    "unknown"
+  ],
+  "frameRateBuckets": [
+    "under-15",
+    "15-29",
+    "30-59",
+    "60-plus",
+    "unknown"
+  ],
+  "frameTimeBuckets": [
+    "under-17ms",
+    "17-33ms",
+    "34-66ms",
+    "over-66ms",
+    "unknown"
+  ],
+  "gameFeatureIds": [
+    "renderer.initialisation",
+    "renderer.frame-loop",
+    "renderer.asset-loading",
+    "renderer.input",
+    "renderer.scene-generation",
+    "renderer.post-processing"
+  ],
+  "gameCounterCodes": [
+    "frame-drop",
+    "device-loss",
+    "asset-load-failure",
+    "shader-failure",
+    "fallback-activation"
+  ],
+  "gameErrorCodes": [
+    "renderer.initialisation-failed",
+    "renderer.device-lost",
+    "renderer.asset-load-failed",
+    "renderer.frame-budget-exceeded",
+    "renderer.shader-failed",
+    "renderer.unknown"
+  ],
+  "abuseBlockBands": [
+    "five-minutes",
+    "fifteen-minutes",
+    "one-hour",
+    "six-hours",
+    "twenty-four-hours",
+    "fail-closed",
+    "edge-blocked"
+  ],
+  "hourlyBugReport": {
+    "schemaName": "FeedbackHourlyBugReportSchema",
+    "type": "feedback-hourly-bug-report",
+    "required": [
+      "type",
+      "version",
+      "reportId",
+      "windowStart",
+      "windowEnd",
+      "revision",
+      "generatedAt",
+      "acceptedCount",
+      "rejectedCount",
+      "diagnosticsAttachedCount",
+      "deterministicRedactionCount",
+      "scannerRedactionCount",
+      "processorLagSeconds",
+      "rates",
+      "traffic",
+      "targetDistribution",
+      "issueTypeDistribution",
+      "severityDistribution",
+      "intentDistribution",
+      "buildDistribution",
+      "rendererDistribution",
+      "backendDistribution",
+      "viewportDistribution",
+      "frameRateDistribution",
+      "frameTimeDistribution",
+      "diagnosticFeatureDistribution",
+      "diagnosticCounterDistribution",
+      "diagnosticErrorDistribution",
+      "abuseBlockBands",
+      "comparison",
+      "advisories"
+    ],
+    "optional": [],
+    "distributionMaximums": {
+      "targetDistribution": 256,
+      "issueTypeDistribution": 9,
+      "severityDistribution": 5,
+      "intentDistribution": 12,
+      "buildDistribution": 128,
+      "rendererDistribution": 4,
+      "backendDistribution": 3,
+      "viewportDistribution": 7,
+      "frameRateDistribution": 5,
+      "frameTimeDistribution": 5,
+      "diagnosticFeatureDistribution": 6,
+      "diagnosticCounterDistribution": 5,
+      "diagnosticErrorDistribution": 6,
+      "abuseBlockBands": 16
+    }
+  },
+  "dailySatisfactionReport": {
+    "schemaName": "FeedbackDailySatisfactionReportSchema",
+    "type": "feedback-daily-satisfaction-report",
+    "required": [
+      "type",
+      "version",
+      "reportId",
+      "windowStart",
+      "windowEnd",
+      "revision",
+      "generatedAt",
+      "processorLagSeconds",
+      "acceptedReviewCount",
+      "starDistribution",
+      "sentimentDistribution",
+      "intentDistribution",
+      "rollingWindows",
+      "advisories"
+    ],
+    "optional": [
+      "meanStars",
+      "medianStars",
+      "previousPeriodDeltaStars"
+    ],
+    "distributionMaximums": {
+      "starDistribution": 5,
+      "sentimentDistribution": 7,
+      "intentDistribution": 12
+    },
+    "rollingPeriods": ["7-days", "30-days", "90-days"]
+  },
+  "advisory": {
+    "codes": [
+      "severity-five",
+      "critical-regression",
+      "satisfaction-drop",
+      "processor-stale"
+    ],
+    "levels": ["advisory", "critical"],
+    "recommendationIds": [
+      "inspect-release",
+      "verify-renderer-health",
+      "review-top-intents",
+      "verify-processor-health"
+    ],
+    "maximumRecommendations": 8,
+    "maximumAdvisories": 32
+  },
+  "processors": [
+    "bug-hourly",
+    "review-daily",
+    "commit-reconciliation"
+  ]
+}

@@ -4,3 +4,4 @@
 - [ADR 0002: Read-Only Pseudonymous Token Reporting Tools](./adr-0002-read-only-pseudonymous-token-reporting-tools.md)
 - [ADR 0003: Exact-main OIDC package publishing](./adr-0003-exact-main-oidc-package-publishing.md)
 - [ADR 0004: Owner Token adjustment MCP boundary](./adr-0004-owner-token-adjustment-mcp-boundary.md)
+- [ADR 0005: Privacy-Safe Read-Only Feedback Contract](./adr-0005-privacy-safe-read-only-feedback-contract.md)

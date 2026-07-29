@@ -3,16 +3,34 @@
 ## Unreleased
 
 - **Added**
-  - (placeholder)
+  - Added a privacy-safe, read-only `feedback` domain for bounded bug health,
+    satisfaction, deterministic alerts, processor freshness, and
+    reporter-identifier-free structured feedback entries.
+  - Added stable `feedback.mcp.enabled` rollout and `admin.feedback.read`
+    capability metadata, complete action-level `mcp:access` plus
+    `admin.feedback.read` OAuth scope metadata, en-GB descriptions, and
+    machine-readable privacy exclusions and bounds.
+  - Added canonical packet, aggregate, advisory, diagnostics, and
+    processor-checkpoint projections with pinned parity coverage.
 
 - **Changed**
-  - (placeholder)
+  - Advanced the additive MCP Admin registry contract to `2026-08-11.v6`
+    while preserving all v0.4.0 Token reporting and adjustment domains.
+  - Modelled structured-entry filters as exact `packetType` variants so bug
+    and review filters cannot be combined, and documented the published
+    `@plasius/schema ^1.4.0` direct-consumption release gate.
 
 - **Fixed**
   - (placeholder)
 
 - **Security**
-  - (placeholder)
+  - Closed every feedback-specific input and output object projection with
+    `additionalProperties: false` so undeclared fields cannot cross the
+    Admin/MCP contract boundary.
+  - Kept narrative, reporter correlation, binary images, storage references,
+    raw URLs, unrestricted scans, and mutations outside the public contract.
+  - Raised transitive `brace-expansion`, `nanoid`, and `postcss` override
+    floors to remediate the current high-severity development-tool advisories.
 
 ## [0.4.0] - 2026-08-08
 
