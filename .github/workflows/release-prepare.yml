@@ -418,6 +418,9 @@ jobs:
 
               DEADLINE=$((SECONDS + MERGE_TIMEOUT_SECONDS))
               while [ "${SECONDS}" -lt "${DEADLINE}" ]; do
+                # Auto-merge is intentionally not required at repository level.
+                # Retry the App-authenticated merge after required checks settle.
+                gh pr merge "${PR_NUMBER}" --squash --delete-branch >/dev/null 2>&1 || true
                 STATE="$(gh pr view "${PR_NUMBER}" --json state --jq '.state')"
                 if [ "${STATE}" = "MERGED" ]; then
                   echo "Release metadata PR #${PR_NUMBER} merged."
