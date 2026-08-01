@@ -37,6 +37,20 @@ Current inherited example:
   `Plasius-LTD/mcp-admin-contracts#12` because the change restores governance
   documentation only.
 
+Current feedback contract:
+
+- `feedback.mcp.enabled` is the canonical parent rollout flag for the
+  read-only feedback action family.
+- `admin.feedback.read` is carried as the required capability. Complete
+  action-level OAuth metadata contains `mcp:access` and
+  `admin.feedback.read`.
+- The global AI-plugin manifest keeps its existing `openid email profile`
+  scopes until the site OAuth issuer and protected-resource metadata are
+  coordinated; feedback scope publication is not performed unconditionally.
+- The consuming admin/MCP runtime owns flag evaluation, entitlement,
+  authentication, fail-closed rate limits, and audit. If either control is
+  unavailable, feedback actions must be omitted or rejected.
+
 ## 5. Testing Expectations
 
 - Tests for new or changed exported flag/capability identifiers must verify the
