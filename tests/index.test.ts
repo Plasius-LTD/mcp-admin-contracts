@@ -17,6 +17,10 @@ import {
   MCP_ADMIN_CONTRACT_VERSION,
   MCP_ADMIN_FOUNDATION_ENV_VAR,
   MCP_ADMIN_FOUNDATION_FLAG_ID,
+  MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
+  MCP_ECONOMY_FINANCE_APPROVE_CAPABILITY,
+  MCP_ECONOMY_FINANCE_ADJUST_CAPABILITY,
+  MCP_ECONOMY_FINANCE_VIEW_CAPABILITY,
   MCP_ADMIN_PRODUCTION_READINESS_ENV_VAR,
   MCP_ADMIN_PRODUCTION_READINESS_FLAG_ID,
   MCP_ADMIN_REGISTRY_SOURCE,
@@ -108,6 +112,10 @@ describe("MCP admin contracts", () => {
     const promoteAsset = schema.actions.promoteAsset!;
     const rollbackAsset = schema.actions.rollbackAsset!;
     const getAssetJobStatus = schema.actions.getAssetJobStatus!;
+    const getUserTokenWallet = schema.actions.getUserTokenWallet!;
+    const proposeTokenCredit = schema.actions.proposeTokenCredit!;
+    const approveTokenCredit = schema.actions.approveTokenCredit!;
+    const reverseTokenCredit = schema.actions.reverseTokenCredit!;
 
     expect(listFeatureFlags.execution.path).toBe("/api/mcp/feature-flags");
     expect(enableFeatureFlag.input.flagKey!.required).toBe(true);
@@ -179,6 +187,34 @@ describe("MCP admin contracts", () => {
     expect(getAssetJobStatus.output.job!.properties?.state?.description).toContain(
       "pipeline",
     );
+    expect(getUserTokenWallet.domain).toBe("economyAdjustments");
+    expect(getUserTokenWallet.rolloutFlag).toBe(
+      MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
+    );
+    expect(getUserTokenWallet.requiredCapability).toBe(
+      MCP_ECONOMY_FINANCE_VIEW_CAPABILITY,
+    );
+    expect(getUserTokenWallet.requiredTokenScopes).toEqual([
+      "mcp:access",
+      MCP_ECONOMY_FINANCE_VIEW_CAPABILITY,
+    ]);
+    expect(proposeTokenCredit.requiredCapability).toBe(
+      MCP_ECONOMY_FINANCE_ADJUST_CAPABILITY,
+    );
+    expect(proposeTokenCredit.input.amountTokenSubunits!.type).toBe("string");
+    expect(proposeTokenCredit.input.amountTokenSubunits!.required).toBe(true);
+    expect(proposeTokenCredit.input.targetWalletKind!.enum).toEqual(["personal"]);
+    expect(approveTokenCredit.requiredCapability).toBe(
+      MCP_ECONOMY_FINANCE_APPROVE_CAPABILITY,
+    );
+    expect(approveTokenCredit.input.expectedPreviewHash!.required).toBe(true);
+    expect(reverseTokenCredit.input.originalAdjustmentId!.required).toBe(true);
+    expect(reverseTokenCredit.execution.method).toBe("POST");
+    expect(
+      Object.values(schema.actions).some(
+        (action) => action.execution.method === "DELETE" && action.domain === "economyAdjustments",
+      ),
+    ).toBe(false);
     expect(schema.contextShape.extensionRules!.properties?.notes?.itemType).toBe("string");
     expect(enableFeatureFlag.verification?.descriptionKey).toBe(
       mcpAdminContractDescriptionKeys.verificationEnableFeatureFlag,
@@ -271,6 +307,19 @@ describe("MCP admin contracts", () => {
           domain: "assetSource",
           rolloutFlag: MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID,
           actions: ["searchAssetSources", "stageAssetSource"],
+        }),
+        expect.objectContaining({
+          domain: "economyAdjustments",
+          rolloutFlag: MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
+          actions: [
+            "getUserTokenWallet",
+            "listUserTokenActivity",
+            "listTokenAdjustments",
+            "proposeTokenCredit",
+            "approveTokenCredit",
+            "rejectTokenCredit",
+            "reverseTokenCredit",
+          ],
         }),
       ]),
     );

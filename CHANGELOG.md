@@ -3,10 +3,13 @@
 ## Unreleased
 
 - **Added**
-  - (placeholder)
+  - Added owner-only Token wallet/activity reads and dual-approved credit,
+    rejection, and compensating-reversal MCP descriptors, including explicit
+    finance capabilities and OAuth resource scopes (task #51).
 
 - **Changed**
-  - (placeholder)
+  - Advanced the additive MCP contract to `2026-04-28.v4` so discovery clients
+    can identify the governed Token adjustment family.
 
 - **Fixed**
   - (placeholder)

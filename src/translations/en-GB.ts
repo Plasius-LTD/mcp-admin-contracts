@@ -69,6 +69,20 @@ export const mcpAdminContractsEnGbTranslations = {
     "Rollback an asset runtime channel to a previous promoted manifest version.",
   "mcpAdminContracts.action.getAssetJobStatus.description":
     "Read governed asset job status, planned processing work, and evidence references.",
+  "mcpAdminContracts.action.getUserTokenWallet.description":
+    "Read an account's server-resolved Token wallet summary without exposing provider or payment data.",
+  "mcpAdminContracts.action.listUserTokenActivity.description":
+    "Read a bounded, cursor-paginated Token activity history for one account.",
+  "mcpAdminContracts.action.listTokenAdjustments.description":
+    "List audited Token adjustment proposals and their approval state.",
+  "mcpAdminContracts.action.proposeTokenCredit.description":
+    "Propose a positive Token credit for a server-resolved personal wallet; a distinct owner must approve it.",
+  "mcpAdminContracts.action.approveTokenCredit.description":
+    "Approve a preview-bound Token credit proposed by a different owner.",
+  "mcpAdminContracts.action.rejectTokenCredit.description":
+    "Reject a pending Token credit without mutating the wallet.",
+  "mcpAdminContracts.action.reverseTokenCredit.description":
+    "Propose an immutable compensating reversal of an earlier owner Token credit.",
   "mcpAdminContracts.verification.enableFeatureFlag.description":
     "Use admin audit history to verify the rollout change.",
   "mcpAdminContracts.verification.disableFeatureFlag.description":
@@ -83,4 +97,6 @@ export const mcpAdminContractsEnGbTranslations = {
     "Use asset promotion history and admin audit events to verify the immutable runtime manifest promotion.",
   "mcpAdminContracts.verification.rollbackAsset.description":
     "Use asset promotion history and admin audit events to verify the runtime channel rollback.",
+  "mcpAdminContracts.verification.tokenAdjustment.description":
+    "Read the adjustment and Token activity history to verify its immutable proposal, decision, and ledger result.",
 } as const satisfies Record<McpAdminContractDescriptionKey, string>;
