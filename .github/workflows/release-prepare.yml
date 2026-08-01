@@ -226,6 +226,8 @@ jobs:
           fi
 
           CURRENT_TAG="${TAG_PREFIX}${CURRENT_VER}"
+          CURRENT_HEAD_SHA="$(git rev-parse HEAD)"
+          CURRENT_TAG_SHA="$(git rev-list -n 1 "${CURRENT_TAG}" 2>/dev/null || true)"
           if npm view "${NAME}@${CURRENT_VER}" version >/dev/null 2>&1; then
             CURRENT_PUBLISHED="true"
           else
@@ -243,7 +245,9 @@ jobs:
 
           if [ "${BUMP}" = "none" ]; then
             TARGET_VER="${CURRENT_VER}"
-          elif grep -Eq "^## (\[${CURRENT_VER}\]|${CURRENT_VER})( |$)" "${FILE}" && { [ "${CURRENT_PUBLISHED}" != "true" ] || [ "${CURRENT_RELEASE_STATE}" != "published" ]; }; then
+          elif grep -Eq "^## (\[${CURRENT_VER}\]|${CURRENT_VER})( |$)" "${FILE}" \
+            && { [ "${CURRENT_PUBLISHED}" != "true" ] || [ "${CURRENT_RELEASE_STATE}" != "published" ]; } \
+            && { [ -z "${CURRENT_TAG_SHA}" ] || [ "${CURRENT_TAG_SHA}" = "${CURRENT_HEAD_SHA}" ]; }; then
             echo "Reusing already-prepared incomplete release version ${CURRENT_VER}."
             TARGET_VER="${CURRENT_VER}"
           else
