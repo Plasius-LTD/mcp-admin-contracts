@@ -9,6 +9,20 @@
   - (placeholder)
 
 - **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.3.1] - 2026-08-01
+
+- **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
   - Made release-preparation merge retries independent of repository auto-merge so required checks can settle without enabling repository-wide auto-merge.
   - Prevented the immutable publication bundle check from treating grep's
     expected early exit as a tar failure under `pipefail`.
@@ -137,3 +151,4 @@
 [0.2.8]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.8
 [0.2.9]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.9
 [0.3.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.3.0
+[0.3.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.3.1
