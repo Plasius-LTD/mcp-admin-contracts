@@ -60,6 +60,20 @@ export const mcpAdminContractDescriptionKeys = {
   actionRollbackAsset: "mcpAdminContracts.action.rollbackAsset.description",
   actionGetAssetJobStatus:
     "mcpAdminContracts.action.getAssetJobStatus.description",
+  actionGetUserTokenWallet:
+    "mcpAdminContracts.action.getUserTokenWallet.description",
+  actionListUserTokenActivity:
+    "mcpAdminContracts.action.listUserTokenActivity.description",
+  actionListTokenAdjustments:
+    "mcpAdminContracts.action.listTokenAdjustments.description",
+  actionProposeTokenCredit:
+    "mcpAdminContracts.action.proposeTokenCredit.description",
+  actionApproveTokenCredit:
+    "mcpAdminContracts.action.approveTokenCredit.description",
+  actionRejectTokenCredit:
+    "mcpAdminContracts.action.rejectTokenCredit.description",
+  actionReverseTokenCredit:
+    "mcpAdminContracts.action.reverseTokenCredit.description",
   verificationEnableFeatureFlag:
     "mcpAdminContracts.verification.enableFeatureFlag.description",
   verificationDisableFeatureFlag:
@@ -74,6 +88,8 @@ export const mcpAdminContractDescriptionKeys = {
     "mcpAdminContracts.verification.promoteAsset.description",
   verificationRollbackAsset:
     "mcpAdminContracts.verification.rollbackAsset.description",
+  verificationTokenAdjustment:
+    "mcpAdminContracts.verification.tokenAdjustment.description",
 } as const;
 
 export type McpAdminContractDescriptionKey =

@@ -56,6 +56,16 @@ The exported registry currently covers:
 - bounded grouped user-aggregation summaries without raw per-user export
 - governed asset catalog, source-intake, pipeline, and review descriptors for
   the hosted `plasius-ltd-site` MCP backend
+- owner-only Token finance descriptors for bounded wallet/activity reads and
+  dual-approved credit or compensating-reversal workflows
+
+Token finance descriptors require the host to enforce the parent
+`economy.tokens.enabled` flag and the package-published
+`mcp.admin-economy-adjustments.enabled` flag. They declare the relevant
+`economy.finance-operations.*` capability and OAuth resource scopes. The
+contract intentionally has no balance-setter or Token delete action: credits
+and reversals are immutable, preview-bound proposals that require a distinct
+owner approval in the runtime authority.
 
 Action descriptors keep their existing `description` field and also expose
 `descriptionKey` and `descriptionDefault` so clients can resolve display text

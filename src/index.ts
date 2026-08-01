@@ -14,7 +14,7 @@ export {
 };
 export type { McpAdminContractDescriptionKey };
 
-export const MCP_ADMIN_CONTRACT_VERSION = "2026-04-28.v3";
+export const MCP_ADMIN_CONTRACT_VERSION = "2026-04-28.v4";
 export const MCP_ADMIN_REGISTRY_SOURCE = "@plasius/mcp-admin-contracts";
 
 export const MCP_ADMIN_FOUNDATION_FLAG_ID = "mcp.admin.foundation.enabled";
@@ -44,6 +44,16 @@ export const MCP_ASSET_PIPELINE_MANAGE_CAPABILITY =
   "asset.pipeline.mcp.manage";
 export const MCP_ASSET_SOURCE_MANAGE_CAPABILITY = "asset.source.manage";
 export const MCP_ASSET_CATALOG_REVIEW_CAPABILITY = "asset.catalog.review";
+export const MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID =
+  "mcp.admin-economy-adjustments.enabled";
+export const ECONOMY_OWNER_ADJUSTMENTS_FLAG_ID =
+  "economy.tokens.owner-adjustments.enabled";
+export const MCP_ECONOMY_FINANCE_VIEW_CAPABILITY =
+  "economy.finance-operations.view";
+export const MCP_ECONOMY_FINANCE_ADJUST_CAPABILITY =
+  "economy.finance-operations.adjust";
+export const MCP_ECONOMY_FINANCE_APPROVE_CAPABILITY =
+  "economy.finance-operations.approve-adjustment";
 
 export interface AiPluginManifest {
   schema_version: "1.0.0";
@@ -99,7 +109,8 @@ export type McpActionDomain =
   | "assetCatalog"
   | "assetPipeline"
   | "assetSource"
-  | "assetReview";
+  | "assetReview"
+  | "economyAdjustments";
 
 export type McpActionFamilyDomain = McpActionDomain | "productionReadiness";
 
@@ -114,6 +125,8 @@ export interface McpActionDescriptor {
   execution: McpActionExecution;
   input: Record<string, McpFieldShape>;
   output: Record<string, McpFieldShape>;
+  requiredCapability?: string;
+  requiredTokenScopes?: readonly string[];
   verification?: McpActionVerification;
 }
 
@@ -126,6 +139,8 @@ export interface McpActionSummary {
   rolloutFlag: string;
   availability: McpActionDescriptor["availability"];
   execution: McpActionExecution;
+  requiredCapability?: string;
+  requiredTokenScopes?: readonly string[];
 }
 
 export interface McpDiscoveryResponse {
@@ -193,6 +208,8 @@ export interface McpSchemaResponse {
       execution: McpActionExecution;
       input: Record<string, McpFieldShape>;
       output: Record<string, McpFieldShape>;
+      requiredCapability?: string;
+      requiredTokenScopes?: readonly string[];
       verification?: McpActionVerification;
     }
   >;
@@ -494,6 +511,34 @@ const assetOperationAcceptedOutput = {
   accepted: booleanField("Whether the hosted backend accepted the governed operation."),
   job: assetJobStatusField("Governed asset job created or updated by the operation."),
   nextAction: stringField("Next expected lifecycle action.", { required: false }),
+} satisfies Record<string, McpFieldShape>;
+
+const tokenAdjustmentOutput = {
+  adjustment: objectField("Audited Token adjustment state.", {
+    adjustmentId: stringField("Stable adjustment identifier."),
+    targetAccountId: stringField("Target account identifier."),
+    targetWalletId: stringField("Server-resolved target wallet identifier."),
+    targetWalletKind: stringField("Server-resolved target wallet kind.", {
+      enum: ["personal"],
+    }),
+    amountTokenSubunits: stringField(
+      "Exact positive base-10 TokenSubunit amount; 1 Token is 1,000 subunits.",
+    ),
+    status: stringField("Current immutable workflow status.", {
+      enum: ["pending", "approved", "rejected", "executed", "failed", "expired"],
+    }),
+    previewHash: stringField("Canonical preview hash bound to the proposal."),
+    proposalHash: stringField("Canonical proposal hash bound to decisions."),
+    proposerAccountId: stringField("Stable proposing owner account identifier."),
+    approverAccountId: stringField("Distinct approving owner account identifier.", {
+      required: false,
+    }),
+    createdAt: stringField("ISO-8601 proposal timestamp."),
+    expiresAt: stringField("ISO-8601 proposal expiry timestamp."),
+    transactionId: stringField("Immutable ledger transaction identifier.", {
+      required: false,
+    }),
+  }),
 } satisfies Record<string, McpFieldShape>;
 
 export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
@@ -1593,6 +1638,247 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       evidence: arrayField("Review and processing evidence references available to the caller.", "AssetEvidence"),
     },
   },
+  {
+    name: "getUserTokenWallet",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionGetUserTokenWallet),
+    domain: "economyAdjustments",
+    rolloutFlag: MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
+    availability: "near-future",
+    requiredCapability: MCP_ECONOMY_FINANCE_VIEW_CAPABILITY,
+    requiredTokenScopes: ["mcp:access", MCP_ECONOMY_FINANCE_VIEW_CAPABILITY],
+    execution: {
+      method: "GET",
+      path: "/api/mcp/economy/users/{accountId}/wallet",
+      source: "near-future-route",
+      notes: [
+        "The backend resolves the personal wallet from the account id; callers cannot select an arbitrary wallet.",
+      ],
+    },
+    input: {
+      accountId: stringField("Stable target account identifier.", { required: true }),
+    },
+    output: {
+      wallet: objectField("Authorized Token wallet summary.", {
+        accountId: stringField("Stable target account identifier."),
+        walletId: stringField("Server-resolved wallet identifier."),
+        walletKind: stringField("Server-resolved wallet kind.", { enum: ["personal"] }),
+        availableTokenSubunits: stringField("Exact available TokenSubunits as base-10 text."),
+        heldTokenSubunits: stringField("Exact held TokenSubunits as base-10 text."),
+        lifetimeCreditedTokenSubunits: stringField(
+          "Exact lifetime credited TokenSubunits as base-10 text.",
+        ),
+        lifetimeReversedTokenSubunits: stringField(
+          "Exact lifetime reversed TokenSubunits as base-10 text.",
+        ),
+        projectionVersion: stringField("Optimistic concurrency projection version."),
+      }),
+    },
+  },
+  {
+    name: "listUserTokenActivity",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionListUserTokenActivity),
+    domain: "economyAdjustments",
+    rolloutFlag: MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
+    availability: "near-future",
+    requiredCapability: MCP_ECONOMY_FINANCE_VIEW_CAPABILITY,
+    requiredTokenScopes: ["mcp:access", MCP_ECONOMY_FINANCE_VIEW_CAPABILITY],
+    execution: {
+      method: "GET",
+      path: "/api/mcp/economy/users/{accountId}/activity",
+      source: "near-future-route",
+    },
+    input: {
+      accountId: stringField("Stable target account identifier.", { required: true }),
+      cursor: stringField("Opaque continuation cursor.", { required: false }),
+      limit: numberField("Maximum results; the backend applies a bounded ceiling.", {
+        required: false,
+      }),
+    },
+    output: {
+      items: arrayField("Immutable Token activity entries.", "WalletActivityEntryV1"),
+      nextCursor: stringField("Opaque cursor for the next page.", { required: false }),
+    },
+  },
+  {
+    name: "listTokenAdjustments",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionListTokenAdjustments),
+    domain: "economyAdjustments",
+    rolloutFlag: MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
+    availability: "near-future",
+    requiredCapability: MCP_ECONOMY_FINANCE_VIEW_CAPABILITY,
+    requiredTokenScopes: ["mcp:access", MCP_ECONOMY_FINANCE_VIEW_CAPABILITY],
+    execution: {
+      method: "GET",
+      path: "/api/mcp/economy/adjustments",
+      source: "near-future-route",
+    },
+    input: {
+      targetAccountId: stringField("Optional target account filter.", { required: false }),
+      status: stringField("Optional workflow status filter.", {
+        required: false,
+        enum: ["pending", "approved", "rejected", "executed", "failed", "expired"],
+      }),
+      cursor: stringField("Opaque continuation cursor.", { required: false }),
+      limit: numberField("Maximum results; the backend applies a bounded ceiling.", {
+        required: false,
+      }),
+    },
+    output: {
+      items: arrayField("Audited adjustment workflow records.", "OperatorAdjustmentProposalV1"),
+      nextCursor: stringField("Opaque cursor for the next page.", { required: false }),
+    },
+  },
+  {
+    name: "proposeTokenCredit",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionProposeTokenCredit),
+    domain: "economyAdjustments",
+    rolloutFlag: MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
+    availability: "near-future",
+    requiredCapability: MCP_ECONOMY_FINANCE_ADJUST_CAPABILITY,
+    requiredTokenScopes: ["mcp:access", MCP_ECONOMY_FINANCE_ADJUST_CAPABILITY],
+    execution: {
+      method: "POST",
+      path: "/api/mcp/economy/adjustments/token-credits",
+      source: "near-future-route",
+      notes: [
+        "This creates a preview-bound proposal only; it does not credit the wallet until a distinct owner approves it.",
+        "Raw idempotency keys and ticket references are fingerprinted before authoritative persistence.",
+      ],
+    },
+    input: {
+      targetAccountId: stringField("Stable target account identifier.", { required: true }),
+      targetWalletKind: stringField("Permitted server-resolved wallet kind.", {
+        required: true,
+        enum: ["personal"],
+      }),
+      amountTokenSubunits: stringField(
+        "Exact positive base-10 TokenSubunit amount; 1 Token is 1,000 subunits.",
+        { required: true },
+      ),
+      reasonCode: stringField("Allowlisted operator reason code.", { required: true }),
+      ticketReference: stringField("Support or change ticket reference.", { required: true }),
+      idempotencyKey: stringField("Caller-generated idempotency key.", { required: true }),
+    },
+    output: tokenAdjustmentOutput,
+    verification: {
+      method: "GET",
+      path: "/api/mcp/economy/adjustments",
+      query: ["adjustmentId={adjustmentId}"],
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.verificationTokenAdjustment,
+      ),
+    },
+  },
+  {
+    name: "approveTokenCredit",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionApproveTokenCredit),
+    domain: "economyAdjustments",
+    rolloutFlag: MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
+    availability: "near-future",
+    requiredCapability: MCP_ECONOMY_FINANCE_APPROVE_CAPABILITY,
+    requiredTokenScopes: [
+      "mcp:access",
+      MCP_ECONOMY_FINANCE_APPROVE_CAPABILITY,
+    ],
+    execution: {
+      method: "POST",
+      path: "/api/mcp/economy/adjustments/{adjustmentId}/approve",
+      source: "near-future-route",
+      notes: [
+        "The authenticated approver must be a different stable platform-owner account from the proposer.",
+      ],
+    },
+    input: {
+      adjustmentId: stringField("Stable pending adjustment identifier.", { required: true }),
+      expectedPreviewHash: stringField("Preview hash displayed to the approver.", {
+        required: true,
+      }),
+      expectedProposalHash: stringField("Proposal hash displayed to the approver.", {
+        required: true,
+      }),
+      idempotencyKey: stringField("Caller-generated idempotency key.", { required: true }),
+    },
+    output: tokenAdjustmentOutput,
+    verification: {
+      method: "GET",
+      path: "/api/mcp/economy/adjustments",
+      query: ["adjustmentId={adjustmentId}"],
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.verificationTokenAdjustment,
+      ),
+    },
+  },
+  {
+    name: "rejectTokenCredit",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionRejectTokenCredit),
+    domain: "economyAdjustments",
+    rolloutFlag: MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
+    availability: "near-future",
+    requiredCapability: MCP_ECONOMY_FINANCE_APPROVE_CAPABILITY,
+    requiredTokenScopes: [
+      "mcp:access",
+      MCP_ECONOMY_FINANCE_APPROVE_CAPABILITY,
+    ],
+    execution: {
+      method: "POST",
+      path: "/api/mcp/economy/adjustments/{adjustmentId}/reject",
+      source: "near-future-route",
+    },
+    input: {
+      adjustmentId: stringField("Stable pending adjustment identifier.", { required: true }),
+      expectedPreviewHash: stringField("Preview hash displayed to the approver.", {
+        required: true,
+      }),
+      expectedProposalHash: stringField("Proposal hash displayed to the approver.", {
+        required: true,
+      }),
+      reasonCode: stringField("Allowlisted rejection reason code.", { required: true }),
+      idempotencyKey: stringField("Caller-generated idempotency key.", { required: true }),
+    },
+    output: tokenAdjustmentOutput,
+    verification: {
+      method: "GET",
+      path: "/api/mcp/economy/adjustments",
+      query: ["adjustmentId={adjustmentId}"],
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.verificationTokenAdjustment,
+      ),
+    },
+  },
+  {
+    name: "reverseTokenCredit",
+    ...translatedDescription(mcpAdminContractDescriptionKeys.actionReverseTokenCredit),
+    domain: "economyAdjustments",
+    rolloutFlag: MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
+    availability: "near-future",
+    requiredCapability: MCP_ECONOMY_FINANCE_ADJUST_CAPABILITY,
+    requiredTokenScopes: ["mcp:access", MCP_ECONOMY_FINANCE_ADJUST_CAPABILITY],
+    execution: {
+      method: "POST",
+      path: "/api/mcp/economy/adjustments/{adjustmentId}/reverse",
+      source: "near-future-route",
+      notes: [
+        "A reversal is a separately approved compensating transaction; the original credit is never updated or deleted.",
+      ],
+    },
+    input: {
+      originalAdjustmentId: stringField("Executed credit adjustment to reverse.", {
+        required: true,
+      }),
+      reasonCode: stringField("Allowlisted reversal reason code.", { required: true }),
+      ticketReference: stringField("Support or change ticket reference.", { required: true }),
+      idempotencyKey: stringField("Caller-generated idempotency key.", { required: true }),
+    },
+    output: tokenAdjustmentOutput,
+    verification: {
+      method: "GET",
+      path: "/api/mcp/economy/adjustments",
+      query: ["adjustmentId={adjustmentId}"],
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.verificationTokenAdjustment,
+      ),
+    },
+  },
 ] as const;
 
 export function listMcpActionSummaries(): McpActionSummary[] {
@@ -1605,6 +1891,8 @@ export function listMcpActionSummaries(): McpActionSummary[] {
     rolloutFlag: action.rolloutFlag,
     availability: action.availability,
     execution: action.execution,
+    requiredCapability: action.requiredCapability,
+    requiredTokenScopes: action.requiredTokenScopes,
   }));
 }
 
@@ -1717,6 +2005,8 @@ export function buildMcpSchemaResponse(): McpSchemaResponse {
         execution: action.execution,
         input: action.input,
         output: action.output,
+        requiredCapability: action.requiredCapability,
+        requiredTokenScopes: action.requiredTokenScopes,
         verification: action.verification,
       },
     ]),
@@ -1785,6 +2075,11 @@ function buildMcpActionFamilies(): McpContextResponse["actionFamilies"] {
       domain: "assetReview",
       rolloutFlag: MCP_ASSET_PIPELINE_FLAG_ID,
       actions: getActionsByDomain("assetReview"),
+    },
+    {
+      domain: "economyAdjustments",
+      rolloutFlag: MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
+      actions: getActionsByDomain("economyAdjustments"),
     },
     {
       domain: "productionReadiness",
