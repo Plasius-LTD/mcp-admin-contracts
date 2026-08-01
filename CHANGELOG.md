@@ -3,6 +3,20 @@
 ## Unreleased
 
 - **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.3.0] - 2026-08-01
+
+- **Added**
   - Added owner-only Token wallet/activity reads and dual-approved credit,
     rejection, and compensating-reversal MCP descriptors, including explicit
     finance capabilities and OAuth resource scopes (task #51).
@@ -115,3 +129,4 @@
 [0.2.7]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.7
 [0.2.8]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.8
 [0.2.9]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.9
+[0.3.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.3.0
