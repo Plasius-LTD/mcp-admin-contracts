@@ -94,6 +94,9 @@ describe("release workflow trust boundaries", () => {
     );
     expect(releasePrepareWorkflow).not.toContain("--force-with-lease");
     expect(releasePrepareWorkflow).not.toContain("secrets: inherit");
+    expect(releasePrepareWorkflow).toContain(
+      'gh pr merge "${PR_NUMBER}" --squash --delete-branch >/dev/null 2>&1 || true',
+    );
   });
 
   it("keeps the release pre-identity parser valid JavaScript", () => {

@@ -9,7 +9,7 @@
   - (placeholder)
 
 - **Fixed**
-  - (placeholder)
+  - Made release-preparation merge retries independent of repository auto-merge so required checks can settle without enabling repository-wide auto-merge.
 
 - **Security**
   - (placeholder)
