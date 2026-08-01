@@ -14,6 +14,9 @@
     expected early exit as a tar failure under `pipefail`.
   - Made npm publication consume the immutable tarball as an explicit local
     path instead of allowing npm to parse it as a Git dependency specifier.
+  - Prevented release preparation from reusing an unpublished package version
+    when its existing immutable tag points behind current main; the workflow
+    now cuts the requested next version instead.
 
 - **Security**
   - (placeholder)

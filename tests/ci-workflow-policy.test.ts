@@ -129,4 +129,16 @@ describe("release workflow trust boundaries", () => {
     expect(checked.stderr).toBe("");
     expect(checked.status).toBe(0);
   });
+
+  it("never reuses an incomplete version whose existing tag points behind main", () => {
+    expect(releasePrepareWorkflow).toContain(
+      'CURRENT_HEAD_SHA="$(git rev-parse HEAD)"',
+    );
+    expect(releasePrepareWorkflow).toContain(
+      'CURRENT_TAG_SHA="$(git rev-list -n 1 "${CURRENT_TAG}" 2>/dev/null || true)"',
+    );
+    expect(releasePrepareWorkflow).toContain(
+      '[ -z "${CURRENT_TAG_SHA}" ] || [ "${CURRENT_TAG_SHA}" = "${CURRENT_HEAD_SHA}" ]',
+    );
+  });
 });
