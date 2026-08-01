@@ -85,6 +85,15 @@ describe("release workflow trust boundaries", () => {
     expect(publishJob).not.toContain("npm run ");
   });
 
+  it("does not terminate the tar listing early under pipefail", () => {
+    expect(cdWorkflow).toContain(
+      `tar -tzf "\${TARBALL}" | grep -E '^package/dist(/|$)' >/dev/null`,
+    );
+    expect(cdWorkflow).not.toContain(
+      `tar -tzf "\${TARBALL}" | grep -Eq '^package/dist(/|$)'`,
+    );
+  });
+
   it("lands release metadata through a unique non-force-pushed pull request", () => {
     expect(releasePrepareWorkflow).toContain(
       'BRANCH="release/${TAG}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"',
