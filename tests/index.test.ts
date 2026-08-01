@@ -198,6 +198,12 @@ describe("MCP admin contracts", () => {
       "mcp:access",
       MCP_ECONOMY_FINANCE_VIEW_CAPABILITY,
     ]);
+    expect(getUserTokenWallet.output.wallet!.properties?.initialized?.type).toBe(
+      "boolean",
+    );
+    expect(getUserTokenWallet.output.wallet!.properties?.walletId?.required).toBe(
+      false,
+    );
     expect(proposeTokenCredit.requiredCapability).toBe(
       MCP_ECONOMY_FINANCE_ADJUST_CAPABILITY,
     );
