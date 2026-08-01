@@ -10,6 +10,8 @@
 
 - **Fixed**
   - Made release-preparation merge retries independent of repository auto-merge so required checks can settle without enabling repository-wide auto-merge.
+  - Prevented the immutable publication bundle check from treating grep's
+    expected early exit as a tar failure under `pipefail`.
 
 - **Security**
   - (placeholder)
