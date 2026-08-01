@@ -88,6 +88,11 @@ jobs:
         with:
           ref: ${{ inputs.base_branch }}
           fetch-depth: 0
+          # The release-prep App token is installed after checkout. Retaining
+          # the read-only workflow credential here would override the
+          # x-access-token URL and make the subsequent release branch push use
+          # github-actions[bot] instead of the narrowly scoped App identity.
+          persist-credentials: false
 
       - name: Create release-prep GitHub App token
         id: release_prep_app_token
