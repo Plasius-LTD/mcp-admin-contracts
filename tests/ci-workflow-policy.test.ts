@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string): string =>
@@ -93,5 +94,18 @@ describe("release workflow trust boundaries", () => {
     );
     expect(releasePrepareWorkflow).not.toContain("--force-with-lease");
     expect(releasePrepareWorkflow).not.toContain("secrets: inherit");
+  });
+
+  it("keeps the release pre-identity parser valid JavaScript", () => {
+    const match = releasePrepareWorkflow.match(
+      /EFFECTIVE_PREID=\$\([^\n]* node -e '\n([\s\S]*?)\n\s*'\)/u,
+    );
+    expect(match?.[1]).toBeTruthy();
+    const checked = spawnSync(process.execPath, ["--check"], {
+      input: match?.[1] ?? "",
+      encoding: "utf8",
+    });
+    expect(checked.stderr).toBe("");
+    expect(checked.status).toBe(0);
   });
 });
