@@ -9,7 +9,7 @@
   - (placeholder)
 
 - **Fixed**
-  - (placeholder)
+  - Made release-preparation merge retries independent of repository auto-merge and moved trusted main CI to isolated hosted runners so exact-SHA publication cannot stall on an unavailable self-hosted runner.
 
 - **Security**
   - (placeholder)
