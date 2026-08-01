@@ -1660,7 +1660,12 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
     output: {
       wallet: objectField("Authorized Token wallet summary.", {
         accountId: stringField("Stable target account identifier."),
-        walletId: stringField("Server-resolved wallet identifier."),
+        initialized: booleanField(
+          "Whether the authoritative personal wallet has been initialized.",
+        ),
+        walletId: stringField("Server-resolved wallet identifier.", {
+          required: false,
+        }),
         walletKind: stringField("Server-resolved wallet kind.", { enum: ["personal"] }),
         availableTokenSubunits: stringField("Exact available TokenSubunits as base-10 text."),
         heldTokenSubunits: stringField("Exact held TokenSubunits as base-10 text."),
@@ -1670,7 +1675,9 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
         lifetimeReversedTokenSubunits: stringField(
           "Exact lifetime reversed TokenSubunits as base-10 text.",
         ),
-        projectionVersion: stringField("Optimistic concurrency projection version."),
+        projectionVersion: stringField("Optimistic concurrency projection version.", {
+          required: false,
+        }),
       }),
     },
   },
