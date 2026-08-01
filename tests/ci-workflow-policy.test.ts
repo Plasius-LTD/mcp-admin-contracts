@@ -94,6 +94,15 @@ describe("release workflow trust boundaries", () => {
     );
   });
 
+  it("publishes the immutable tarball as an explicit local path", () => {
+    expect(cdWorkflow).toContain(
+      'npm publish "./${TARBALL}" --ignore-scripts "${PUBLISH_ARGS[@]}"',
+    );
+    expect(cdWorkflow).not.toContain(
+      'npm publish "${TARBALL}" --ignore-scripts "${PUBLISH_ARGS[@]}"',
+    );
+  });
+
   it("lands release metadata through a unique non-force-pushed pull request", () => {
     expect(releasePrepareWorkflow).toContain(
       'BRANCH="release/${TAG}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"',

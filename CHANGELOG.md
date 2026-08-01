@@ -12,6 +12,8 @@
   - Made release-preparation merge retries independent of repository auto-merge so required checks can settle without enabling repository-wide auto-merge.
   - Prevented the immutable publication bundle check from treating grep's
     expected early exit as a tar failure under `pipefail`.
+  - Made npm publication consume the immutable tarball as an explicit local
+    path instead of allowing npm to parse it as a Git dependency specifier.
 
 - **Security**
   - (placeholder)
