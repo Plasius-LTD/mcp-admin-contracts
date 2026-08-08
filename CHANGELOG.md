@@ -3,6 +3,20 @@
 ## Unreleased
 
 - **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.4.0] - 2026-08-08
+
+- **Added**
   - Added public-safe, read-only `get_admin_token_economy_overview`,
     `list_admin_token_wallet_balances`, `list_admin_token_activity`, and
     `get_admin_token_trends` descriptors with exact aggregate balances,
@@ -160,3 +174,4 @@
 [0.2.9]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.2.9
 [0.3.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.3.0
 [0.3.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.3.1
+[0.4.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.4.0
