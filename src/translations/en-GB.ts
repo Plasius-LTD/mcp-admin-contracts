@@ -2,9 +2,9 @@ import type { McpAdminContractDescriptionKey } from "../i18n.js";
 
 export const mcpAdminContractsEnGbTranslations = {
   "mcpAdminContracts.manifest.descriptionForModel":
-    "OAuth-protected MCP discovery manifest for the Plasius admin control plane covering feature flags, capabilities, analytics, and audit-backed operations.",
+    "OAuth-protected MCP discovery manifest for the Plasius admin control plane covering feature flags, capabilities, analytics, pseudonymous Token finance reads, and audit-backed operations.",
   "mcpAdminContracts.manifest.description":
-    "Authenticated admin MCP discovery for the Plasius feature flag, capability, analytics, and audit control plane.",
+    "Authenticated admin MCP discovery for the Plasius feature flag, capability, analytics, pseudonymous Token reporting, and audit control plane.",
   "mcpAdminContracts.action.listFeatureFlags.description":
     "List existing feature flags from the admin rollout control plane.",
   "mcpAdminContracts.action.getFeatureFlag.description":
@@ -43,6 +43,14 @@ export const mcpAdminContractsEnGbTranslations = {
     "Run grouped user aggregation over the bounded admin user data surface.",
   "mcpAdminContracts.action.aggregateUsersByPreset.description":
     "Run a curated user-aggregation preset against the bounded aggregation route.",
+  "mcpAdminContracts.action.listAdminTokenActivity.description":
+    "List bounded pseudonymous Token activity after re-checking MCP scope, finance capabilities, and stored rollout flags.",
+  "mcpAdminContracts.action.getAdminTokenEconomyOverview.description":
+    "Read the identifier-free global Token balance, lifetime totals, wallet counts, and authoritative projection freshness.",
+  "mcpAdminContracts.action.listAdminTokenWalletBalances.description":
+    "List bounded pseudonymous Token wallet balances without exposing account, payment, provider, or raw wallet identifiers.",
+  "mcpAdminContracts.action.getAdminTokenTrends.description":
+    "Read privacy-suppressed Token acquisition and usage trends with explainable advisory anomaly indicators.",
   "mcpAdminContracts.action.searchAssetCatalog.description":
     "Search promoted asset catalog records without live third-party lookup.",
   "mcpAdminContracts.action.getAssetManifest.description":

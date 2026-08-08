@@ -3,16 +3,24 @@
 ## Unreleased
 
 - **Added**
-  - (placeholder)
+  - Added public-safe, read-only `get_admin_token_economy_overview`,
+    `list_admin_token_wallet_balances`, `list_admin_token_activity`, and
+    `get_admin_token_trends` descriptors with exact aggregate balances,
+    bounded pseudonymous rows, privacy-suppressed trends, and explainable
+    anomaly metadata.
 
 - **Changed**
-  - (placeholder)
+  - Advanced the additive MCP Admin registry contract to `2026-08-08.v5` and
+    exposed action-level OAuth scope, capability, rollout, read-only, and
+    identity-resolution metadata.
 
 - **Fixed**
   - (placeholder)
 
 - **Security**
-  - (placeholder)
+  - Token reporting contracts exclude raw financial/identity identifiers,
+    provider-specific sources, small-cohort trend values, identity resolution,
+    and mutation actions; global projection freshness uses canonical sequences.
 
 ## [0.3.1] - 2026-08-01
 

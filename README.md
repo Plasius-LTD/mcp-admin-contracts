@@ -13,6 +13,7 @@ This package contains contract metadata only:
 - rollout flag identifiers used by the contract
 - deprecated legacy env-name constants retained for source compatibility only
 - analytics and bounded user-aggregation whitelist constants
+- public-safe pseudonymous Token activity/trend metadata
 - TypeScript types for these payloads
 
 It intentionally does not contain runtime enforcement:
@@ -54,6 +55,8 @@ The exported registry currently covers:
 - capability-rule and effective-capability descriptors keyed by canonical tuple identities
 - bounded analytics queries and curated analytics presets
 - bounded grouped user-aggregation summaries without raw per-user export
+- read-only global Token overview, pseudonymous wallet/activity, and bounded
+  spend-trend descriptors
 - governed asset catalog, source-intake, pipeline, and review descriptors for
   the hosted `plasius-ltd-site` MCP backend
 - owner-only Token finance descriptors for bounded wallet/activity reads and
@@ -66,6 +69,37 @@ Token finance descriptors require the host to enforce the parent
 contract intentionally has no balance-setter or Token delete action: credits
 and reversals are immutable, preview-bound proposals that require a distinct
 owner approval in the runtime authority.
+
+### Admin Token reporting
+
+The Token descriptors require the `mcp:access` OAuth scope, the
+`admin.economy.read` and `economy.finance-operations.view` capabilities, and
+both stored flags:
+
+- `economy.admin-history.enabled`
+- `mcp.admin-economy-history.enabled`
+
+The global overview is an identifier-free point-read shape with exact balance
+and lifetime totals, wallet counts, projection time, and canonical authority
+sequence. Wallet balance pages are capped at 100 rows and expose only separate
+MCP-audience wallet/subject aliases, closed component/status codes, exact
+amounts, update time, and projection sequence.
+
+Activity pages default to 30 days, allow at most 365 days and 100 rows, and
+return only normalized source groupings, exact signed TokenSubunits,
+source-owned safe labels, and versioned MCP-audience row/subject aliases. Raw
+account, wallet, transaction, order, payment, provider-event, idempotency, and
+journal-integrity identifiers are outside the contract.
+
+Trend cohorts below five distinct subjects are suppressed without counts or
+amounts. Reported points may include an explainable 28-window median/MAD
+advisory. All four reporting tools are read-only and MCP has no
+identity-resolution action.
+
+These descriptors remain `near-future` until the hosted site registers the
+JSON-RPC tools and passes scope/capability/flag, bounded-output, privacy, and
+audit integration tests. Installing or publishing this package does not create
+runtime routes.
 
 Action descriptors keep their existing `description` field and also expose
 `descriptionKey` and `descriptionDefault` so clients can resolve display text

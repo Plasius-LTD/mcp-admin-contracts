@@ -37,6 +37,16 @@ Current inherited example:
   `Plasius-LTD/mcp-admin-contracts#12` because the change restores governance
   documentation only.
 
+Current runtime-relevant inherited flags for Admin Token reporting:
+
+- `economy.admin-history.enabled`
+- `mcp.admin-economy-history.enabled`
+
+The hosted site is the source-of-truth evaluator. This package exports those
+keys, `mcp:access`, `admin.economy.read`, and
+`economy.finance-operations.view` as discovery metadata only. Disabled or
+unauthorized callers must receive neither callable tool discovery nor data.
+
 ## 5. Testing Expectations
 
 - Tests for new or changed exported flag/capability identifiers must verify the
