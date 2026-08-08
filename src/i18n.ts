@@ -40,6 +40,10 @@ export const mcpAdminContractDescriptionKeys = {
     "mcpAdminContracts.action.aggregateUsersByPreset.description",
   actionListAdminTokenActivity:
     "mcpAdminContracts.action.listAdminTokenActivity.description",
+  actionGetAdminTokenEconomyOverview:
+    "mcpAdminContracts.action.getAdminTokenEconomyOverview.description",
+  actionListAdminTokenWalletBalances:
+    "mcpAdminContracts.action.listAdminTokenWalletBalances.description",
   actionGetAdminTokenTrends:
     "mcpAdminContracts.action.getAdminTokenTrends.description",
   actionSearchAssetCatalog:

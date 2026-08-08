@@ -45,6 +45,10 @@ export const mcpAdminContractsEnGbTranslations = {
     "Run a curated user-aggregation preset against the bounded aggregation route.",
   "mcpAdminContracts.action.listAdminTokenActivity.description":
     "List bounded pseudonymous Token activity after re-checking MCP scope, finance capabilities, and stored rollout flags.",
+  "mcpAdminContracts.action.getAdminTokenEconomyOverview.description":
+    "Read the identifier-free global Token balance, lifetime totals, wallet counts, and authoritative projection freshness.",
+  "mcpAdminContracts.action.listAdminTokenWalletBalances.description":
+    "List bounded pseudonymous Token wallet balances without exposing account, payment, provider, or raw wallet identifiers.",
   "mcpAdminContracts.action.getAdminTokenTrends.description":
     "Read privacy-suppressed Token acquisition and usage trends with explainable advisory anomaly indicators.",
   "mcpAdminContracts.action.searchAssetCatalog.description":

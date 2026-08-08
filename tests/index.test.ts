@@ -23,6 +23,9 @@ import {
   MCP_ADMIN_TOKEN_ACTIVITY_SOURCES,
   MCP_ADMIN_TOKEN_ACTIVITY_STATUSES,
   MCP_ADMIN_TOKEN_ACTIVITY_TYPES,
+  MCP_ADMIN_TOKEN_WALLET_COMPONENTS,
+  MCP_ADMIN_TOKEN_WALLET_SORTS,
+  MCP_ADMIN_TOKEN_WALLET_STATUSES,
   MCP_ADMIN_FOUNDATION_ENV_VAR,
   MCP_ADMIN_FOUNDATION_FLAG_ID,
   MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID,
@@ -55,6 +58,12 @@ describe("MCP admin contracts", () => {
     expect(response.actions.map((action) => action.name)).toContain("promoteAsset");
     expect(response.actions.map((action) => action.name)).toContain(
       "list_admin_token_activity",
+    );
+    expect(response.actions.map((action) => action.name)).toContain(
+      "get_admin_token_economy_overview",
+    );
+    expect(response.actions.map((action) => action.name)).toContain(
+      "list_admin_token_wallet_balances",
     );
     expect(response.actions.map((action) => action.name)).toContain(
       "get_admin_token_trends",
@@ -207,6 +216,115 @@ describe("MCP admin contracts", () => {
     });
     expect(Object.keys(schema.actions)).not.toContain(
       "resolve_admin_token_subject",
+    );
+  });
+
+  it("publishes identifier-free global summary and pseudonymous wallet balances", () => {
+    const schema = buildMcpSchemaResponse();
+    const overview = schema.actions.get_admin_token_economy_overview!;
+    const wallets = schema.actions.list_admin_token_wallet_balances!;
+    const activity = schema.actions.list_admin_token_activity!;
+
+    expect(overview).toMatchObject({
+      domain: "economy",
+      rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+      availability: "near-future",
+      access: activity.access,
+      execution: {
+        method: "GET",
+        path: "/api/mcp/economy/token-overview",
+        source: "near-future-route",
+      },
+      input: {},
+    });
+    expect(overview.output).toEqual(
+      expect.objectContaining({
+        schemaVersion: expect.any(Object),
+        generatedAt: expect.any(Object),
+        projectionAsOf: expect.any(Object),
+        authoritySequence: expect.any(Object),
+        walletCount: expect.any(Object),
+        activeWalletCount: expect.any(Object),
+        balances: expect.objectContaining({
+          properties: expect.objectContaining({
+            available: expect.any(Object),
+            reserved: expect.any(Object),
+            held: expect.any(Object),
+            rewardProgress: expect.any(Object),
+          }),
+        }),
+        lifetime: expect.objectContaining({
+          properties: expect.objectContaining({
+            bought: expect.any(Object),
+            earned: expect.any(Object),
+            allocated: expect.any(Object),
+            reclaimed: expect.any(Object),
+            spent: expect.any(Object),
+            reversed: expect.any(Object),
+          }),
+        }),
+        rawIdentifiersIncluded: expect.objectContaining({ default: false }),
+      }),
+    );
+    expect(Object.keys(overview.output)).not.toEqual(
+      expect.arrayContaining([
+        "accountId",
+        "walletId",
+        "providerId",
+        "orderId",
+        "paymentId",
+      ]),
+    );
+
+    expect(wallets).toMatchObject({
+      domain: "economy",
+      rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+      availability: "near-future",
+      access: activity.access,
+      execution: {
+        method: "GET",
+        path: "/api/mcp/economy/token-wallet-balances",
+        source: "near-future-route",
+      },
+    });
+    expect(wallets.input.limit).toMatchObject({
+      minimum: 1,
+      maximum: 100,
+      default: 100,
+    });
+    expect(wallets.input.components?.enum).toEqual(
+      MCP_ADMIN_TOKEN_WALLET_COMPONENTS,
+    );
+    expect(wallets.input.statuses?.enum).toEqual(
+      MCP_ADMIN_TOKEN_WALLET_STATUSES,
+    );
+    expect(wallets.input.sort?.enum).toEqual(MCP_ADMIN_TOKEN_WALLET_SORTS);
+    expect(wallets.output.items?.items?.properties).toEqual(
+      expect.objectContaining({
+        walletAlias: expect.any(Object),
+        subjectAlias: expect.any(Object),
+        component: expect.any(Object),
+        status: expect.any(Object),
+        available: expect.any(Object),
+        reserved: expect.any(Object),
+        held: expect.any(Object),
+        rewardProgress: expect.any(Object),
+        updatedAt: expect.any(Object),
+        authoritySequence: expect.any(Object),
+      }),
+    );
+    expect(wallets.output.metadata?.properties).toMatchObject({
+      audience: expect.objectContaining({ enum: ["mcp-token-balances"] }),
+      rawIdentifiersIncluded: expect.objectContaining({ default: false }),
+    });
+    expect(Object.keys(wallets.output.items?.items?.properties ?? {})).not.toEqual(
+      expect.arrayContaining([
+        "accountId",
+        "walletId",
+        "householdId",
+        "email",
+        "displayName",
+      ]),
     );
   });
 
@@ -485,6 +603,8 @@ describe("MCP admin contracts", () => {
           domain: "economy",
           rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
           actions: [
+            "get_admin_token_economy_overview",
+            "list_admin_token_wallet_balances",
             "list_admin_token_activity",
             "get_admin_token_trends",
           ],

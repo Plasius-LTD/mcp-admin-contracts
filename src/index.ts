@@ -14,7 +14,7 @@ export {
 };
 export type { McpAdminContractDescriptionKey };
 
-export const MCP_ADMIN_CONTRACT_VERSION = "2026-04-28.v4";
+export const MCP_ADMIN_CONTRACT_VERSION = "2026-08-08.v5";
 export const MCP_ADMIN_REGISTRY_SOURCE = "@plasius/mcp-admin-contracts";
 
 export const MCP_ADMIN_FOUNDATION_FLAG_ID = "mcp.admin.foundation.enabled";
@@ -370,6 +370,19 @@ export const MCP_ADMIN_TOKEN_ACTIVITY_STATUSES = [
   "failed",
 ] as const;
 
+export const MCP_ADMIN_TOKEN_WALLET_COMPONENTS = [
+  "household",
+  "personal",
+  "gameplay-allocation",
+] as const;
+
+export const MCP_ADMIN_TOKEN_WALLET_STATUSES = ["active", "closed"] as const;
+
+export const MCP_ADMIN_TOKEN_WALLET_SORTS = [
+  "available-desc",
+  "updated-at-desc",
+] as const;
+
 /** Provider-neutral source groupings; provider names are intentionally absent. */
 export const MCP_ADMIN_TOKEN_ACTIVITY_SOURCES = [
   "paid-purchase",
@@ -668,6 +681,94 @@ const adminTokenActivityEntryField = objectField(
     subjectAlias: stringField(
       "Versioned audience-separated opaque alias for the activity subject.",
       { format: "pseudonymous-alias" },
+    ),
+  },
+);
+
+const adminTokenAggregateBalancesField = objectField(
+  "Identifier-free exact aggregate Token balance categories.",
+  {
+    schemaVersion: stringField("Economy reporting contract version.", {
+      enum: ["1"],
+    }),
+    available: stringField("Exact available TokenSubunits.", {
+      format: "int64-string",
+    }),
+    reserved: stringField("Exact reserved TokenSubunits.", {
+      format: "int64-string",
+    }),
+    held: stringField("Exact held TokenSubunits.", {
+      format: "int64-string",
+    }),
+    rewardProgress: stringField("Exact accumulated reward TokenSubunits.", {
+      format: "int64-string",
+    }),
+  },
+);
+
+const adminTokenAggregateLifetimeField = objectField(
+  "Identifier-free exact aggregate lifetime Token metrics.",
+  {
+    schemaVersion: stringField("Economy reporting contract version.", {
+      enum: ["1"],
+    }),
+    bought: stringField("Exact lifetime bought TokenSubunits.", {
+      format: "int64-string",
+    }),
+    earned: stringField("Exact lifetime earned TokenSubunits.", {
+      format: "int64-string",
+    }),
+    allocated: stringField("Exact lifetime allocated TokenSubunits.", {
+      format: "int64-string",
+    }),
+    reclaimed: stringField("Exact lifetime reclaimed TokenSubunits.", {
+      format: "int64-string",
+    }),
+    spent: stringField("Exact lifetime spent TokenSubunits.", {
+      format: "int64-string",
+    }),
+    reversed: stringField("Exact lifetime reversed TokenSubunits.", {
+      format: "int64-string",
+    }),
+  },
+);
+
+const adminTokenWalletBalanceEntryField = objectField(
+  "One pseudonymous Token wallet balance with no raw account or wallet identifier.",
+  {
+    schemaVersion: stringField("Economy reporting contract version.", {
+      enum: ["1"],
+    }),
+    walletAlias: stringField("MCP-audience opaque wallet alias.", {
+      format: "pseudonymous-alias",
+    }),
+    subjectAlias: stringField("MCP-audience opaque subject alias.", {
+      format: "pseudonymous-alias",
+    }),
+    component: stringField("Provider-neutral wallet component.", {
+      enum: MCP_ADMIN_TOKEN_WALLET_COMPONENTS,
+    }),
+    status: stringField("Wallet projection status.", {
+      enum: MCP_ADMIN_TOKEN_WALLET_STATUSES,
+    }),
+    available: stringField("Exact available TokenSubunits.", {
+      format: "int64-string",
+    }),
+    reserved: stringField("Exact reserved TokenSubunits.", {
+      format: "int64-string",
+    }),
+    held: stringField("Exact held TokenSubunits.", {
+      format: "int64-string",
+    }),
+    rewardProgress: stringField("Exact reward-progress TokenSubunits.", {
+      format: "int64-string",
+    }),
+    updatedAt: stringField("UTC time of the included wallet projection.", {
+      format: "date-time",
+    }),
+    authoritySequence: stringField(
+      "Canonical positive authority sequence through which this row is current.",
+      { format: "uint64-string" },
     ),
   },
 );
@@ -1527,6 +1628,151 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
         "Grouped summary rows only; raw user export remains out of scope.",
         "AggregationBucket",
       ),
+    },
+  },
+  {
+    name: "get_admin_token_economy_overview",
+    ...translatedDescription(
+      mcpAdminContractDescriptionKeys.actionGetAdminTokenEconomyOverview,
+    ),
+    domain: "economy",
+    rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+    availability: "near-future",
+    access: adminEconomyReadAccess,
+    execution: {
+      method: "GET",
+      path: "/api/mcp/economy/token-overview",
+      source: "near-future-route",
+      notes: [
+        "The hosted site must register this descriptor as a JSON-RPC MCP tool; publishing this package does not create the runtime route.",
+        "The result is an identifier-free point read of the rebuildable authoritative projection and is never derived by summing a page.",
+        "The tool is read-only and cannot resolve identity or mutate a Token balance.",
+      ],
+    },
+    input: {},
+    output: {
+      schemaVersion: stringField("Economy reporting contract version.", {
+        enum: ["1"],
+      }),
+      generatedAt: stringField("UTC time the response was generated.", {
+        format: "date-time",
+      }),
+      projectionAsOf: stringField(
+        "UTC time of the included global projection.",
+        { format: "date-time" },
+      ),
+      authoritySequence: stringField(
+        "Canonical positive authority sequence through which the projection is current.",
+        { format: "uint64-string" },
+      ),
+      walletCount: numberField("Total represented Token wallets.", {
+        minimum: 0,
+      }),
+      activeWalletCount: numberField("Active represented Token wallets.", {
+        minimum: 0,
+      }),
+      balances: adminTokenAggregateBalancesField,
+      lifetime: adminTokenAggregateLifetimeField,
+      rawIdentifiersIncluded: booleanField(
+        "Always false for this identifier-free contract.",
+        { default: false },
+      ),
+    },
+  },
+  {
+    name: "list_admin_token_wallet_balances",
+    ...translatedDescription(
+      mcpAdminContractDescriptionKeys.actionListAdminTokenWalletBalances,
+    ),
+    domain: "economy",
+    rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
+    availability: "near-future",
+    access: adminEconomyReadAccess,
+    execution: {
+      method: "GET",
+      path: "/api/mcp/economy/token-wallet-balances",
+      source: "near-future-route",
+      notes: [
+        "The hosted site must register this descriptor as a JSON-RPC MCP tool; publishing this package does not create the runtime route.",
+        "Responses are private/no-store and bounded to 100 pseudonymous projection rows.",
+        "Raw account, wallet, household, payment, and provider identifiers are excluded and identity resolution is unavailable.",
+      ],
+    },
+    input: {
+      limit: numberField("Maximum wallet balance rows to return.", {
+        required: false,
+        minimum: 1,
+        maximum: 100,
+        default: 100,
+      }),
+      cursor: stringField(
+        "Opaque query-bound cursor returned by the preceding page.",
+        { required: false, format: "opaque-cursor" },
+      ),
+      components: arrayField(
+        "Optional provider-neutral wallet-component filters.",
+        "string",
+        {
+          required: false,
+          enum: MCP_ADMIN_TOKEN_WALLET_COMPONENTS,
+          maxItems: MCP_ADMIN_TOKEN_WALLET_COMPONENTS.length,
+        },
+      ),
+      statuses: arrayField("Optional wallet-status filters.", "string", {
+        required: false,
+        enum: MCP_ADMIN_TOKEN_WALLET_STATUSES,
+        maxItems: MCP_ADMIN_TOKEN_WALLET_STATUSES.length,
+      }),
+      subjectAlias: stringField(
+        "Optional exact MCP-audience subject alias; raw account identifiers are not accepted.",
+        { required: false, format: "pseudonymous-alias" },
+      ),
+      sort: stringField("Allowlisted stable wallet sort.", {
+        required: false,
+        enum: MCP_ADMIN_TOKEN_WALLET_SORTS,
+        default: "available-desc",
+      }),
+    },
+    output: {
+      schemaVersion: stringField("Economy reporting contract version.", {
+        enum: ["1"],
+      }),
+      items: arrayField(
+        "Pseudonymous wallet balances without raw account, wallet, household, payment, or provider identifiers.",
+        "AdminTokenWalletBalanceEntryV1",
+        {
+          items: adminTokenWalletBalanceEntryField,
+          maxItems: 100,
+        },
+      ),
+      hasMore: booleanField("Whether another bounded page exists."),
+      nextCursor: stringField("Opaque cursor for the next page.", {
+        required: false,
+        format: "opaque-cursor",
+      }),
+      metadata: objectField("Privacy and normalized wallet query metadata.", {
+        schemaVersion: stringField("Economy reporting contract version.", {
+          enum: ["1"],
+        }),
+        generatedAt: stringField("UTC time the result was generated.", {
+          format: "date-time",
+        }),
+        sort: stringField("Applied stable sort.", {
+          enum: MCP_ADMIN_TOKEN_WALLET_SORTS,
+        }),
+        pageLimit: numberField("Applied page bound.", {
+          minimum: 1,
+          maximum: 100,
+        }),
+        audience: stringField("Pseudonym audience fixed by the MCP endpoint.", {
+          enum: ["mcp-token-balances"],
+        }),
+        pseudonymVersion: stringField("Active opaque pseudonym key version."),
+        rawIdentifiersIncluded: booleanField(
+          "Always false for this public-safe contract.",
+          { default: false },
+        ),
+      }),
     },
   },
   {

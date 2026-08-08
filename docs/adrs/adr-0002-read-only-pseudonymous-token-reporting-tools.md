@@ -6,8 +6,9 @@ Accepted
 
 ## Context
 
-Finance operators need MCP access to the same bounded Token activity and trend
-surface as the touch-first Admin workspace. Routine reporting must not expose
+Finance operators need MCP access to the same global balance/lifetime,
+pseudonymous wallet/activity, and trend surface as the touch-first Admin
+workspace. Routine reporting must not expose
 raw account, wallet, transaction, order, payment, provider-event, idempotency,
 or journal-integrity identifiers. MCP must not gain a pseudonym-resolution or
 financial-mutation path.
@@ -19,8 +20,13 @@ HTTP cache controls.
 
 ## Decision
 
-- Add the exact tool names `list_admin_token_activity` and
+- Add the exact tool names `get_admin_token_economy_overview`,
+  `list_admin_token_wallet_balances`, `list_admin_token_activity`, and
   `get_admin_token_trends` under the `economy` action domain.
+- The overview contains only exact identifier-free aggregate balance/lifetime
+  totals, wallet counts, and projection freshness. Wallet pages contain only
+  separate MCP-audience wallet/subject aliases, closed component/status codes,
+  exact non-negative amounts, and canonical authority sequence.
 - Publish `mcp:access` as the required OAuth scope metadata and require both
   `admin.economy.read` and `economy.finance-operations.view` capabilities.
 - Require both stored rollout flags: `economy.admin-history.enabled` and
@@ -35,7 +41,7 @@ HTTP cache controls.
 - Keep descriptors `near-future` until the hosted site registers and verifies
   the JSON-RPC tools. Publication of this package alone never claims that a
   callable route exists.
-- Advance the additive registry contract identifier to `2026-07-18.v4`.
+- Advance the additive registry contract identifier to `2026-08-08.v5`.
 
 ## Consequences
 
