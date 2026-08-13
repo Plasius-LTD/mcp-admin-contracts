@@ -1,6 +1,27 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createI18n } from "@plasius/translations";
+import {
+  FEEDBACK_BACKEND_BUCKETS,
+  FEEDBACK_CONTRACT_VERSION,
+  FEEDBACK_FRAME_RATE_BUCKETS,
+  FEEDBACK_FRAME_TIME_BUCKETS,
+  FEEDBACK_GAME_COUNTER_CODES,
+  FEEDBACK_GAME_ERROR_CODES,
+  FEEDBACK_GAME_FEATURE_IDS,
+  FEEDBACK_INTENT_IDS,
+  FEEDBACK_PERSISTABLE_ISSUE_TYPES,
+  FEEDBACK_RENDERER_BUCKETS,
+  FEEDBACK_SENTIMENT_BUCKETS,
+  FEEDBACK_SURFACE_IDS,
+  FEEDBACK_THEME_IDS,
+  FEEDBACK_VIEWPORT_BUCKETS,
+  FeedbackBugPacketSchema,
+  FeedbackDailySatisfactionReportSchema,
+  FeedbackHourlyBugReportSchema,
+  FeedbackProcessorCheckpointSchema,
+  FeedbackReviewPacketSchema,
+} from "@plasius/schema";
 import type { McpFieldShape } from "../src/index.js";
 import {
   buildAiPluginManifest,
@@ -65,66 +86,57 @@ import {
   MCP_ECONOMY_FINANCE_VIEW_CAPABILITY,
 } from "../src/index.js";
 
-interface FeedbackSchemaParityFixture {
-  sourcePackage: string;
-  sourceCommit: string;
-  sourceFile: string;
-  sourceSha256: string;
-  contractVersion: string;
-  uuidV4Pattern: string;
-  packetSchemas: Record<
-    string,
-    {
-      type: string;
-      required: string[];
-      optional: string[];
-    }
-  >;
-  surfaceIds: string[];
-  persistableIssueTypes: string[];
-  sentimentBuckets: string[];
-  intentIds: string[];
-  themeIds: string[];
-  rendererBuckets: string[];
-  backendBuckets: string[];
-  viewportBuckets: string[];
-  frameRateBuckets: string[];
-  frameTimeBuckets: string[];
-  gameFeatureIds: string[];
-  gameCounterCodes: string[];
-  gameErrorCodes: string[];
-  abuseBlockBands: string[];
-  hourlyBugReport: {
-    schemaName: string;
-    type: string;
-    required: string[];
-    optional: string[];
-    distributionMaximums: Record<string, number>;
-  };
-  dailySatisfactionReport: {
-    schemaName: string;
-    type: string;
-    required: string[];
-    optional: string[];
-    distributionMaximums: Record<string, number>;
-    rollingPeriods: string[];
-  };
-  advisory: {
-    codes: string[];
-    levels: string[];
-    recommendationIds: string[];
-    maximumRecommendations: number;
-    maximumAdvisories: number;
-  };
-  processors: string[];
+interface CanonicalSchemaFieldMetadata {
+  isRequired: boolean;
+  enumValues?: readonly unknown[];
+  itemType?: CanonicalSchemaFieldMetadata;
+  _shape?: Record<string, CanonicalSchemaFieldMetadata>;
 }
 
-const feedbackSchemaParityFixture = JSON.parse(
-  readFileSync(
-    new URL("./fixtures/feedback-schema-parity.json", import.meta.url),
-    "utf8",
-  ),
-) as FeedbackSchemaParityFixture;
+interface CanonicalSchemaMetadata {
+  meta: { entityType: string; version: string };
+  _shape: Record<string, CanonicalSchemaFieldMetadata>;
+}
+
+const asCanonicalSchema = (schema: unknown): CanonicalSchemaMetadata =>
+  schema as CanonicalSchemaMetadata;
+
+const partitionCanonicalSchema = (
+  schema: CanonicalSchemaMetadata,
+): { required: string[]; optional: string[] } => ({
+  required: Object.entries(schema._shape)
+    .filter(([, field]) => field.isRequired)
+    .map(([key]) => key)
+    .sort(),
+  optional: Object.entries(schema._shape)
+    .filter(([, field]) => !field.isRequired)
+    .map(([key]) => key)
+    .sort(),
+});
+
+const canonicalStringEnum = (
+  field: CanonicalSchemaFieldMetadata | undefined,
+): string[] => {
+  const values = field?.enumValues;
+  expect(values).toBeDefined();
+  expect(values?.every((value) => typeof value === "string")).toBe(true);
+  return [...(values as readonly string[])];
+};
+
+const canonicalBugPacket = asCanonicalSchema(FeedbackBugPacketSchema);
+const canonicalReviewPacket = asCanonicalSchema(FeedbackReviewPacketSchema);
+const canonicalHourlyBugReport = asCanonicalSchema(
+  FeedbackHourlyBugReportSchema,
+);
+const canonicalDailySatisfactionReport = asCanonicalSchema(
+  FeedbackDailySatisfactionReportSchema,
+);
+const canonicalProcessorCheckpoint = asCanonicalSchema(
+  FeedbackProcessorCheckpointSchema,
+);
+
+const CANONICAL_FEEDBACK_UUID_V4_PATTERN =
+  "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$";
 
 const objectProperties = (field: McpFieldShape): Record<string, McpFieldShape> => {
   expect(field.type).toBe("object");
@@ -861,23 +873,15 @@ describe("MCP admin contracts", () => {
   });
 
   it("matches canonical @plasius/schema bug and review packet projections", () => {
-    expect(feedbackSchemaParityFixture.sourcePackage).toBe(
-      MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE,
-    );
-    expect(feedbackSchemaParityFixture.sourceCommit).toMatch(/^[0-9a-f]{40}$/);
-    expect(feedbackSchemaParityFixture.sourceFile).toBe("src/feedback.ts");
-    expect(feedbackSchemaParityFixture.sourceSha256).toMatch(
-      /^[0-9a-f]{64}$/,
-    );
-    expect(feedbackSchemaParityFixture.contractVersion).toBe(
+    expect(FEEDBACK_CONTRACT_VERSION).toBe(
       MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION,
     );
 
     const entries =
       buildMcpSchemaResponse().actions.listFeedbackStructuredEntries!;
     expect(entries.schemaSource).toEqual({
-      packageName: feedbackSchemaParityFixture.sourcePackage,
-      contractVersion: feedbackSchemaParityFixture.contractVersion,
+      packageName: MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE,
+      contractVersion: FEEDBACK_CONTRACT_VERSION,
       schemaNames: [
         "FeedbackBugPacketSchema",
         "FeedbackReviewPacketSchema",
@@ -887,32 +891,25 @@ describe("MCP admin contracts", () => {
     expect(packetUnion.discriminator).toBe("type");
     expect(packetUnion.oneOf).toHaveLength(2);
 
-    for (const packetSchema of Object.values(
-      feedbackSchemaParityFixture.packetSchemas,
-    )) {
-      const packet = unionVariant(packetUnion, packetSchema.type);
+    for (const packetSchema of [canonicalBugPacket, canonicalReviewPacket]) {
+      const packet = unionVariant(packetUnion, packetSchema.meta.entityType);
       const properties = objectProperties(packet);
-      expect(partitionFieldKeys(properties)).toEqual({
-        required: [...packetSchema.required].sort(),
-        optional: [...packetSchema.optional].sort(),
-      });
-      expect(properties.type?.constValue).toBe(packetSchema.type);
-      expect(properties.version?.constValue).toBe(
-        feedbackSchemaParityFixture.contractVersion,
+      expect(partitionFieldKeys(properties)).toEqual(
+        partitionCanonicalSchema(packetSchema),
       );
+      expect(properties.type?.constValue).toBe(packetSchema.meta.entityType);
+      expect(properties.version?.constValue).toBe(packetSchema.meta.version);
       expect(properties.packetId?.pattern).toBe(
-        feedbackSchemaParityFixture.uuidV4Pattern,
+        CANONICAL_FEEDBACK_UUID_V4_PATTERN,
       );
     }
 
     const bugPacket = objectProperties(
       unionVariant(packetUnion, "feedback-bug-packet"),
     );
-    expect(bugPacket.surfaceId?.enum).toEqual(
-      feedbackSchemaParityFixture.surfaceIds,
-    );
+    expect(bugPacket.surfaceId?.enum).toEqual(FEEDBACK_SURFACE_IDS);
     expect(bugPacket.issueType?.enum).toEqual(
-      feedbackSchemaParityFixture.persistableIssueTypes,
+      FEEDBACK_PERSISTABLE_ISSUE_TYPES,
     );
     expect(bugPacket.severity).toMatchObject({ minimum: 1, maximum: 5 });
     expect(bugPacket.releaseId).toMatchObject({
@@ -929,16 +926,10 @@ describe("MCP admin contracts", () => {
     const analysis = bugPacket.analysis!;
     expect(analysis.required).toBe(false);
     const analyzed = objectProperties(unionVariant(analysis, "analyzed"));
-    expect(analyzed.sentiment?.enum).toEqual(
-      feedbackSchemaParityFixture.sentimentBuckets,
-    );
-    expect(analyzed.intentIds?.items?.enum).toEqual(
-      feedbackSchemaParityFixture.intentIds,
-    );
+    expect(analyzed.sentiment?.enum).toEqual(FEEDBACK_SENTIMENT_BUCKETS);
+    expect(analyzed.intentIds?.items?.enum).toEqual(FEEDBACK_INTENT_IDS);
     expect(analyzed.intentIds?.maxItems).toBe(8);
-    expect(analyzed.themeIds?.items?.enum).toEqual(
-      feedbackSchemaParityFixture.themeIds,
-    );
+    expect(analyzed.themeIds?.items?.enum).toEqual(FEEDBACK_THEME_IDS);
     expect(analyzed.themeIds?.maxItems).toBe(8);
     expect(analyzed.confidence?.enum).toEqual(["low", "medium", "high"]);
 
@@ -960,29 +951,29 @@ describe("MCP admin contracts", () => {
       "generator.renderer-diagnostics.v1",
     );
     expect(generatorDiagnostics.renderer?.enum).toEqual(
-      feedbackSchemaParityFixture.rendererBuckets,
+      FEEDBACK_RENDERER_BUCKETS,
     );
     expect(generatorDiagnostics.backend?.enum).toEqual(
-      feedbackSchemaParityFixture.backendBuckets,
+      FEEDBACK_BACKEND_BUCKETS,
     );
     expect(generatorDiagnostics.viewportBucket?.enum).toEqual(
-      feedbackSchemaParityFixture.viewportBuckets,
+      FEEDBACK_VIEWPORT_BUCKETS,
     );
     expect(generatorDiagnostics.frameRateBucket?.enum).toEqual(
-      feedbackSchemaParityFixture.frameRateBuckets,
+      FEEDBACK_FRAME_RATE_BUCKETS,
     );
     expect(generatorDiagnostics.frameTimeBucket?.enum).toEqual(
-      feedbackSchemaParityFixture.frameTimeBuckets,
+      FEEDBACK_FRAME_TIME_BUCKETS,
     );
     expect(generatorDiagnostics.featureIds?.items?.enum).toEqual(
-      feedbackSchemaParityFixture.gameFeatureIds,
+      FEEDBACK_GAME_FEATURE_IDS,
     );
     expect(generatorDiagnostics.errorCodes?.items?.enum).toEqual(
-      feedbackSchemaParityFixture.gameErrorCodes,
+      FEEDBACK_GAME_ERROR_CODES,
     );
     expect(
       generatorDiagnostics.counters?.items?.properties?.code?.enum,
-    ).toEqual(feedbackSchemaParityFixture.gameCounterCodes);
+    ).toEqual(FEEDBACK_GAME_COUNTER_CODES);
 
     const reviewPacket = objectProperties(
       unionVariant(packetUnion, "feedback-review-packet"),
@@ -995,15 +986,56 @@ describe("MCP admin contracts", () => {
       minimum: 1,
       maximum: 5,
     });
+
+    const canonicalBugValue = {
+      type: canonicalBugPacket.meta.entityType,
+      version: canonicalBugPacket.meta.version,
+      packetId: "11111111-1111-4111-8111-111111111111",
+      acceptedAt: "2026-08-13T11:00:00.000Z",
+      surfaceId: FEEDBACK_SURFACE_IDS[0],
+      issueType: FEEDBACK_PERSISTABLE_ISSUE_TYPES[0],
+      severity: 1,
+      releaseId: "release-1",
+      buildId: "build-1",
+    };
+    expect(FeedbackBugPacketSchema.validate(canonicalBugValue).valid).toBe(
+      true,
+    );
+    expect(
+      FeedbackBugPacketSchema.validate({
+        ...canonicalBugValue,
+        packetId: "11111111-1111-4111-A111-111111111111",
+      }).valid,
+    ).toBe(false);
+    expect(
+      FeedbackBugPacketSchema.validate({
+        ...canonicalBugValue,
+        surfaceId: "https://example.invalid/private",
+      }).valid,
+    ).toBe(false);
+    expect(
+      FeedbackBugPacketSchema.validate({
+        ...canonicalBugValue,
+        narrative: "synthetic forbidden field",
+      }).valid,
+    ).toBe(false);
   });
 
-  it("keeps direct @plasius/schema ^1.4.0 consumption as a documented release blocker", () => {
+  it("consumes the published @plasius/schema ^1.4.0 contract directly", () => {
     const packageManifest = JSON.parse(
       readFileSync(new URL("../package.json", import.meta.url), "utf8"),
     ) as {
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;
       peerDependencies?: Record<string, string>;
+    };
+    const packageLock = JSON.parse(
+      readFileSync(new URL("../package-lock.json", import.meta.url), "utf8"),
+    ) as {
+      packages?: Record<
+        string,
+        { version?: string; resolved?: string; integrity?: string; link?: boolean }
+      >;
     };
     const readme = readFileSync(
       new URL("../README.md", import.meta.url),
@@ -1017,23 +1049,30 @@ describe("MCP admin contracts", () => {
       "utf8",
     );
 
-    expect(packageManifest.dependencies ?? {}).not.toHaveProperty(
-      "@plasius/schema",
-    );
+    expect(packageManifest.dependencies?.["@plasius/schema"]).toBe("^1.4.0");
     expect(packageManifest.devDependencies ?? {}).not.toHaveProperty(
       "@plasius/schema",
     );
     expect(packageManifest.peerDependencies ?? {}).not.toHaveProperty(
       "@plasius/schema",
     );
+    expect(packageLock.packages?.["node_modules/@plasius/schema"]).toMatchObject(
+      {
+        version: "1.4.0",
+        resolved:
+          "https://registry.npmjs.org/@plasius/schema/-/schema-1.4.0.tgz",
+        integrity:
+          "sha512-Qq6Ry36isxsb/HdWzGSvS+DnlbtEtURyDONk6czUI1eKUyzkw7LtPudLPrXMbqw8hVE31QzO7I9l/nr27G3Few==",
+      },
+    );
+    expect(
+      packageLock.packages?.["node_modules/@plasius/schema"]?.link,
+    ).not.toBe(true);
     for (const document of [readme, adr]) {
       expect(document).toMatch(
-        /does\s+not yet directly import or depend on\s+`@plasius\/schema`/,
+        /directly\s+(?:import|imports|consume|consumes)(?:\s+the)?(?:\s+published)?\s+`@plasius\/schema \^1\.4\.0`/i,
       );
-      expect(document).toMatch(
-        /(?:publishing|release of) this feedback contract(?: remains| is)? blocked until a (?:released|published)\s+`@plasius\/schema` version satisfying `\^1\.4\.0`/i,
-      );
-      expect(document).toMatch(/unpublished semver/i);
+      expect(document).not.toMatch(/release (?:remains )?blocked/i);
     }
   });
 
@@ -1041,16 +1080,36 @@ describe("MCP admin contracts", () => {
     const action = buildMcpSchemaResponse().actions.getFeedbackBugHealth!;
     const report = action.output.reports!.items!;
     const properties = objectProperties(report);
-    const fixture = feedbackSchemaParityFixture.hourlyBugReport;
+    const distributionMaximums = {
+      targetDistribution: 256,
+      issueTypeDistribution: 9,
+      severityDistribution: 5,
+      intentDistribution: 12,
+      buildDistribution: 128,
+      rendererDistribution: 4,
+      backendDistribution: 3,
+      viewportDistribution: 7,
+      frameRateDistribution: 5,
+      frameTimeDistribution: 5,
+      diagnosticFeatureDistribution: 6,
+      diagnosticCounterDistribution: 5,
+      diagnosticErrorDistribution: 6,
+      abuseBlockBands: 16,
+    };
+    const canonicalAdvisoryFields =
+      canonicalHourlyBugReport._shape.advisories?.itemType?._shape;
 
-    expect(action.schemaSource?.schemaNames).toEqual([fixture.schemaName]);
-    expect(partitionFieldKeys(properties)).toEqual({
-      required: [...fixture.required].sort(),
-      optional: [...fixture.optional].sort(),
-    });
-    expect(properties.type?.constValue).toBe(fixture.type);
+    expect(action.schemaSource?.schemaNames).toEqual([
+      "FeedbackHourlyBugReportSchema",
+    ]);
+    expect(partitionFieldKeys(properties)).toEqual(
+      partitionCanonicalSchema(canonicalHourlyBugReport),
+    );
+    expect(properties.type?.constValue).toBe(
+      canonicalHourlyBugReport.meta.entityType,
+    );
     expect(properties.reportId?.pattern).toBe(
-      feedbackSchemaParityFixture.uuidV4Pattern,
+      CANONICAL_FEEDBACK_UUID_V4_PATTERN,
     );
     expect(properties.rates?.properties).toEqual(
       expect.objectContaining({
@@ -1091,9 +1150,7 @@ describe("MCP admin contracts", () => {
       }),
     );
 
-    for (const [name, maximum] of Object.entries(
-      fixture.distributionMaximums,
-    )) {
+    for (const [name, maximum] of Object.entries(distributionMaximums)) {
       const distribution = properties[name]!;
       expect(distribution.maxItems).toBe(maximum);
       expect(Object.keys(distribution.items?.properties ?? {}).sort()).toEqual([
@@ -1107,66 +1164,75 @@ describe("MCP admin contracts", () => {
     }
 
     expect(properties.targetDistribution?.items?.properties?.id?.enum).toEqual(
-      feedbackSchemaParityFixture.surfaceIds,
+      FEEDBACK_SURFACE_IDS,
     );
     expect(
       properties.issueTypeDistribution?.items?.properties?.id?.enum,
-    ).toEqual(feedbackSchemaParityFixture.persistableIssueTypes);
+    ).toEqual(FEEDBACK_PERSISTABLE_ISSUE_TYPES);
     expect(
       properties.rendererDistribution?.items?.properties?.id?.enum,
-    ).toEqual(feedbackSchemaParityFixture.rendererBuckets);
+    ).toEqual(FEEDBACK_RENDERER_BUCKETS);
     expect(
       properties.backendDistribution?.items?.properties?.id?.enum,
-    ).toEqual(feedbackSchemaParityFixture.backendBuckets);
+    ).toEqual(FEEDBACK_BACKEND_BUCKETS);
     expect(
       properties.viewportDistribution?.items?.properties?.id?.enum,
-    ).toEqual(feedbackSchemaParityFixture.viewportBuckets);
+    ).toEqual(FEEDBACK_VIEWPORT_BUCKETS);
     expect(
       properties.frameRateDistribution?.items?.properties?.id?.enum,
-    ).toEqual(feedbackSchemaParityFixture.frameRateBuckets);
+    ).toEqual(FEEDBACK_FRAME_RATE_BUCKETS);
     expect(
       properties.frameTimeDistribution?.items?.properties?.id?.enum,
-    ).toEqual(feedbackSchemaParityFixture.frameTimeBuckets);
+    ).toEqual(FEEDBACK_FRAME_TIME_BUCKETS);
     expect(
       properties.diagnosticFeatureDistribution?.items?.properties?.id?.enum,
-    ).toEqual(feedbackSchemaParityFixture.gameFeatureIds);
+    ).toEqual(FEEDBACK_GAME_FEATURE_IDS);
     expect(
       properties.diagnosticCounterDistribution?.items?.properties?.id?.enum,
-    ).toEqual(feedbackSchemaParityFixture.gameCounterCodes);
+    ).toEqual(FEEDBACK_GAME_COUNTER_CODES);
     expect(
       properties.diagnosticErrorDistribution?.items?.properties?.id?.enum,
-    ).toEqual(feedbackSchemaParityFixture.gameErrorCodes);
+    ).toEqual(FEEDBACK_GAME_ERROR_CODES);
     expect(properties.abuseBlockBands?.items?.properties?.id?.enum).toEqual(
-      feedbackSchemaParityFixture.abuseBlockBands,
+      canonicalStringEnum(
+        canonicalHourlyBugReport._shape.abuseBlockBands?.itemType?._shape?.id,
+      ),
     );
 
     const advisories = properties.advisories!;
-    expect(advisories.maxItems).toBe(
-      feedbackSchemaParityFixture.advisory.maximumAdvisories,
-    );
+    expect(advisories.maxItems).toBe(32);
     expect(advisories.items?.properties?.code?.enum).toEqual(
-      feedbackSchemaParityFixture.advisory.codes,
+      canonicalStringEnum(canonicalAdvisoryFields?.code),
     );
     expect(advisories.items?.properties?.level?.enum).toEqual(
-      feedbackSchemaParityFixture.advisory.levels,
+      canonicalStringEnum(canonicalAdvisoryFields?.level),
     );
     expect(
       advisories.items?.properties?.recommendationIds?.items?.enum,
-    ).toEqual(feedbackSchemaParityFixture.advisory.recommendationIds);
+    ).toEqual(
+      canonicalStringEnum(canonicalAdvisoryFields?.recommendationIds?.itemType),
+    );
   });
 
   it("matches the canonical daily satisfaction aggregate including zero-data optionals", () => {
     const action = buildMcpSchemaResponse().actions.getFeedbackSatisfaction!;
     const report = action.output.reports!.items!;
     const properties = objectProperties(report);
-    const fixture = feedbackSchemaParityFixture.dailySatisfactionReport;
+    const distributionMaximums = {
+      starDistribution: 5,
+      sentimentDistribution: 7,
+      intentDistribution: 12,
+    };
 
-    expect(action.schemaSource?.schemaNames).toEqual([fixture.schemaName]);
-    expect(partitionFieldKeys(properties)).toEqual({
-      required: [...fixture.required].sort(),
-      optional: [...fixture.optional].sort(),
-    });
-    expect(properties.type?.constValue).toBe(fixture.type);
+    expect(action.schemaSource?.schemaNames).toEqual([
+      "FeedbackDailySatisfactionReportSchema",
+    ]);
+    expect(partitionFieldKeys(properties)).toEqual(
+      partitionCanonicalSchema(canonicalDailySatisfactionReport),
+    );
+    expect(properties.type?.constValue).toBe(
+      canonicalDailySatisfactionReport.meta.entityType,
+    );
     expect(properties.meanStars).toMatchObject({
       required: false,
       minimum: 1,
@@ -1190,23 +1256,24 @@ describe("MCP admin contracts", () => {
       maximum: 1_000_000_000,
     });
 
-    for (const [name, maximum] of Object.entries(
-      fixture.distributionMaximums,
-    )) {
+    for (const [name, maximum] of Object.entries(distributionMaximums)) {
       expect(properties[name]?.maxItems).toBe(maximum);
     }
     expect(
       properties.sentimentDistribution?.items?.properties?.id?.enum,
-    ).toEqual(feedbackSchemaParityFixture.sentimentBuckets);
+    ).toEqual(FEEDBACK_SENTIMENT_BUCKETS);
     expect(properties.intentDistribution?.items?.properties?.id?.enum).toEqual(
-      feedbackSchemaParityFixture.intentIds,
+      FEEDBACK_INTENT_IDS,
     );
     expect(properties.rollingWindows).toMatchObject({
       minItems: 3,
       maxItems: 3,
     });
     expect(properties.rollingWindows?.items?.properties?.period?.enum).toEqual(
-      fixture.rollingPeriods,
+      canonicalStringEnum(
+        canonicalDailySatisfactionReport._shape.rollingWindows?.itemType?._shape
+          ?.period,
+      ),
     );
     expect(properties.rollingWindows?.items?.properties?.meanStars).toMatchObject(
       {
@@ -1216,21 +1283,25 @@ describe("MCP admin contracts", () => {
       },
     );
     expect(properties.advisories?.items?.properties?.code?.enum).toEqual(
-      feedbackSchemaParityFixture.advisory.codes,
+      canonicalStringEnum(
+        canonicalDailySatisfactionReport._shape.advisories?.itemType?._shape
+          ?.code,
+      ),
     );
   });
 
   it("uses canonical processor checkpoint vocabulary for freshness", () => {
     const action = buildMcpSchemaResponse().actions.getFeedbackFreshness!;
-    expect(action.input.processor?.enum).toEqual(
-      feedbackSchemaParityFixture.processors,
+    const canonicalProcessors = canonicalStringEnum(
+      canonicalProcessorCheckpoint._shape.processor,
     );
+    expect(action.input.processor?.enum).toEqual(canonicalProcessors);
     const checkpoint =
       action.output.processors?.items?.properties?.checkpoint;
     expect(checkpoint?.discriminator).toBe("processor");
     expect(checkpoint?.oneOf).toHaveLength(3);
 
-    for (const processor of feedbackSchemaParityFixture.processors) {
+    for (const processor of canonicalProcessors) {
       const properties = objectProperties(
         unionVariant(checkpoint!, processor),
       );
@@ -1239,13 +1310,13 @@ describe("MCP admin contracts", () => {
         "feedback-processor-checkpoint",
       );
       expect(properties.version?.constValue).toBe(
-        feedbackSchemaParityFixture.contractVersion,
+        canonicalProcessorCheckpoint.meta.version,
       );
       if (processor === "commit-reconciliation") {
         expect(properties).not.toHaveProperty("reportId");
       } else {
         expect(properties.reportId?.pattern).toBe(
-          feedbackSchemaParityFixture.uuidV4Pattern,
+          CANONICAL_FEEDBACK_UUID_V4_PATTERN,
         );
       }
     }
@@ -1305,7 +1376,7 @@ describe("MCP admin contracts", () => {
       "locales",
       "client-timestamps",
       "referrers",
-      "credentials-and-secrets",
+      "credential-material",
       "financial-identifiers",
       "government-identifiers",
       "narrative",

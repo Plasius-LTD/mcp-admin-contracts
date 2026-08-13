@@ -12,14 +12,17 @@
     requirements, en-GB descriptions, and machine-readable privacy exclusions
     and bounds.
   - Added canonical packet, aggregate, advisory, diagnostics, and
-    processor-checkpoint projections with pinned parity coverage.
+    processor-checkpoint projections with direct package-schema parity
+    coverage.
 
 - **Changed**
   - Advanced the additive MCP Admin registry contract to `2026-08-11.v6`
     while preserving all v0.4.0 Token reporting and adjustment domains.
   - Modelled structured-entry filters as exact `packetType` variants so bug
-    and review filters cannot be combined, and documented the published
-    `@plasius/schema ^1.4.0` direct-consumption release gate.
+    and review filters cannot be combined.
+  - Replaced the staged source projection with direct registry consumption of
+    published `@plasius/schema ^1.4.0` canonical schema identities and closed
+    vocabularies.
 
 - **Fixed**
   - (placeholder)

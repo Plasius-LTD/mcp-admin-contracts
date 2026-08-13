@@ -145,23 +145,16 @@ exact `packetType`-discriminated union: the bug variant alone permits
 Consumers must reject unknown or cross-packet fields before flattening the
 selected variant into route query parameters.
 
-Packet and report descriptors currently use a pinned, source-hashed projection
-of the staged `@plasius/schema` feedback contract `1.0.0`; this package does
-not yet directly import or depend on `@plasius/schema`. Entries are
-discriminated by the canonical
+This package directly consumes the published `@plasius/schema ^1.4.0`
+dependency. Packet and report descriptors bind their schema sources to its
+feedback contract version `1.0.0`, and their vocabularies and schema identity
+metadata are imported from that package at runtime. Entries are discriminated
+by the canonical
 `feedback-bug-packet`/`feedback-review-packet` identities; hourly bug-health,
 daily satisfaction, advisories, diagnostics, and processor checkpoints use
-the same closed kebab-case vocabulary and UUIDv4 constraints as the pinned
-schema source.
-
-Publishing this feedback contract remains blocked until a published
-`@plasius/schema` version satisfying `^1.4.0` is available. At that point the
-release-preparation change must add `"@plasius/schema": "^1.4.0"` to
-`dependencies`, regenerate `package-lock.json` from the npm registry with
-lifecycle scripts disabled, replace the source-projected parity fixture and
-literals with direct package imports, and rerun the full test, coverage, build,
-pack, and audit gates. Source, file, Git, or unpublished semver dependency pins
-are prohibited.
+the same closed kebab-case vocabulary and lowercase UUIDv4 constraints as the
+canonical schemas. The registry-generated lock resolves the package directly;
+source, file, and Git dependency pins remain prohibited.
 
 The contracts explicitly exclude account, reporter, network, session,
 user-agent, locale, client-time, referrer, coordinate, dimension, and adapter

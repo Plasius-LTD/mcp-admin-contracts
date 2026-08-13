@@ -1,4 +1,25 @@
 import {
+  FEEDBACK_BACKEND_BUCKETS,
+  FEEDBACK_CONTRACT_VERSION,
+  FEEDBACK_FRAME_RATE_BUCKETS,
+  FEEDBACK_FRAME_TIME_BUCKETS,
+  FEEDBACK_GAME_COUNTER_CODES,
+  FEEDBACK_GAME_ERROR_CODES,
+  FEEDBACK_GAME_FEATURE_IDS,
+  FEEDBACK_INTENT_IDS,
+  FEEDBACK_PERSISTABLE_ISSUE_TYPES,
+  FEEDBACK_RENDERER_BUCKETS,
+  FEEDBACK_SENTIMENT_BUCKETS,
+  FEEDBACK_SURFACE_IDS,
+  FEEDBACK_THEME_IDS,
+  FEEDBACK_VIEWPORT_BUCKETS,
+  FeedbackBugPacketSchema,
+  FeedbackDailySatisfactionReportSchema,
+  FeedbackHourlyBugReportSchema,
+  FeedbackProcessorCheckpointSchema,
+  FeedbackReviewPacketSchema,
+} from "@plasius/schema";
+import {
   getMcpAdminContractDefaultTranslation,
   mcpAdminContractDescriptionKeys,
   mcpAdminContractsEnGbTranslations,
@@ -61,7 +82,8 @@ export const MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES = Object.freeze([
   MCP_ADMIN_FEEDBACK_READ_OAUTH_SCOPE,
 ] as const);
 export const MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE = "@plasius/schema";
-export const MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION = "1.0.0";
+export const MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION =
+  FEEDBACK_CONTRACT_VERSION;
 
 export const MCP_ADMIN_FEEDBACK_WINDOWS = [
   "previous-utc-hour",
@@ -93,7 +115,7 @@ export const MCP_ADMIN_FEEDBACK_PRIVACY_EXCLUSIONS = [
   "locales",
   "client-timestamps",
   "referrers",
-  "credentials-and-secrets",
+  "credential-material",
   "financial-identifiers",
   "government-identifiers",
   "narrative",
@@ -228,6 +250,35 @@ export interface McpCanonicalSchemaSource {
   contractVersion: typeof MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION;
   schemaNames: readonly string[];
 }
+
+const canonicalFeedbackSchemas = Object.freeze({
+  FeedbackBugPacketSchema,
+  FeedbackReviewPacketSchema,
+  FeedbackHourlyBugReportSchema,
+  FeedbackDailySatisfactionReportSchema,
+  FeedbackProcessorCheckpointSchema,
+});
+
+type CanonicalFeedbackSchemaName = keyof typeof canonicalFeedbackSchemas;
+
+const feedbackSchemaSource = (
+  ...schemaNames: readonly CanonicalFeedbackSchemaName[]
+): McpCanonicalSchemaSource => {
+  for (const schemaName of schemaNames) {
+    if (
+      canonicalFeedbackSchemas[schemaName].meta.version !==
+      MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION
+    ) {
+      throw new TypeError("Canonical feedback schema version mismatch.");
+    }
+  }
+
+  return {
+    packageName: MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE,
+    contractVersion: MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION,
+    schemaNames: [...schemaNames],
+  };
+};
 
 export interface McpActionDescriptor {
   name: string;
@@ -1090,146 +1141,57 @@ const FEEDBACK_SCHEMA_UUID_V4_PATTERN =
   "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$";
 const FEEDBACK_SCHEMA_SAFE_ID_PATTERN =
   "^[A-Za-z0-9][A-Za-z0-9._:-]*$";
-const FEEDBACK_SCHEMA_SURFACE_IDS = [
-  "site.about",
-  "admin.analytics",
-  "admin.capabilities",
-  "admin.feature-flags",
-  "admin.feedback",
-  "admin.moderation",
-  "admin.users",
-  "site.chatbot",
-  "site.generator",
-  "site.gpu-demo",
-  "site.home",
-  "game.player-system",
-  "account.profile",
-  "site.video",
-] as const;
-const FEEDBACK_SCHEMA_PERSISTABLE_ISSUE_TYPES = [
-  "visual-layout",
-  "functionality",
-  "gameplay",
-  "performance-stability",
-  "accessibility",
-  "content-localisation",
-  "account-access",
-  "other",
-] as const;
-const FEEDBACK_SCHEMA_SENTIMENT_BUCKETS = [
-  "very-negative",
-  "negative",
-  "mixed",
-  "neutral",
-  "positive",
-  "very-positive",
-  "not-detected",
-] as const;
-const FEEDBACK_SCHEMA_INTENT_IDS = [
-  "visual-layout",
-  "functionality",
-  "gameplay",
-  "performance-stability",
-  "accessibility",
-  "content-localisation",
-  "account-access",
-  "other",
-  "praise",
-  "suggestion",
-  "confusion",
-  "frustration",
-] as const;
-const FEEDBACK_SCHEMA_THEME_IDS = [
-  "navigation",
-  "visual-design",
-  "game-controls",
-  "rendering",
-  "responsiveness",
-  "stability",
-  "accessibility",
-  "localisation",
-  "account-access",
-  "overall-experience",
-  "other",
-] as const;
-const FEEDBACK_SCHEMA_RENDERER_BUCKETS = [
-  "webgl2",
-  "webgpu",
-  "canvas2d",
-  "unknown",
-] as const;
-const FEEDBACK_SCHEMA_BACKEND_BUCKETS = [
-  "browser",
-  "worker",
-  "unknown",
-] as const;
-const FEEDBACK_SCHEMA_VIEWPORT_BUCKETS = [
-  "small-portrait",
-  "small-landscape",
-  "medium-portrait",
-  "medium-landscape",
-  "large-portrait",
-  "large-landscape",
-  "unknown",
-] as const;
-const FEEDBACK_SCHEMA_FRAME_RATE_BUCKETS = [
-  "under-15",
-  "15-29",
-  "30-59",
-  "60-plus",
-  "unknown",
-] as const;
-const FEEDBACK_SCHEMA_FRAME_TIME_BUCKETS = [
-  "under-17ms",
-  "17-33ms",
-  "34-66ms",
-  "over-66ms",
-  "unknown",
-] as const;
-const FEEDBACK_SCHEMA_GAME_FEATURE_IDS = [
-  "renderer.initialisation",
-  "renderer.frame-loop",
-  "renderer.asset-loading",
-  "renderer.input",
-  "renderer.scene-generation",
-  "renderer.post-processing",
-] as const;
-const FEEDBACK_SCHEMA_GAME_COUNTER_CODES = [
-  "frame-drop",
-  "device-loss",
-  "asset-load-failure",
-  "shader-failure",
-  "fallback-activation",
-] as const;
-const FEEDBACK_SCHEMA_GAME_ERROR_CODES = [
-  "renderer.initialisation-failed",
-  "renderer.device-lost",
-  "renderer.asset-load-failed",
-  "renderer.frame-budget-exceeded",
-  "renderer.shader-failed",
-  "renderer.unknown",
-] as const;
-const FEEDBACK_SCHEMA_ADVISORY_CODES = [
-  "severity-five",
-  "critical-regression",
-  "satisfaction-drop",
-  "processor-stale",
-] as const;
-const FEEDBACK_SCHEMA_RECOMMENDATION_IDS = [
-  "inspect-release",
-  "verify-renderer-health",
-  "review-top-intents",
-  "verify-processor-health",
-] as const;
-const FEEDBACK_SCHEMA_ABUSE_BLOCK_BANDS = [
-  "five-minutes",
-  "fifteen-minutes",
-  "one-hour",
-  "six-hours",
-  "twenty-four-hours",
-  "fail-closed",
-  "edge-blocked",
-] as const;
+const FEEDBACK_SCHEMA_SURFACE_IDS = FEEDBACK_SURFACE_IDS;
+const FEEDBACK_SCHEMA_PERSISTABLE_ISSUE_TYPES =
+  FEEDBACK_PERSISTABLE_ISSUE_TYPES;
+const FEEDBACK_SCHEMA_SENTIMENT_BUCKETS = FEEDBACK_SENTIMENT_BUCKETS;
+const FEEDBACK_SCHEMA_INTENT_IDS = FEEDBACK_INTENT_IDS;
+const FEEDBACK_SCHEMA_THEME_IDS = FEEDBACK_THEME_IDS;
+const FEEDBACK_SCHEMA_RENDERER_BUCKETS = FEEDBACK_RENDERER_BUCKETS;
+const FEEDBACK_SCHEMA_BACKEND_BUCKETS = FEEDBACK_BACKEND_BUCKETS;
+const FEEDBACK_SCHEMA_VIEWPORT_BUCKETS = FEEDBACK_VIEWPORT_BUCKETS;
+const FEEDBACK_SCHEMA_FRAME_RATE_BUCKETS = FEEDBACK_FRAME_RATE_BUCKETS;
+const FEEDBACK_SCHEMA_FRAME_TIME_BUCKETS = FEEDBACK_FRAME_TIME_BUCKETS;
+const FEEDBACK_SCHEMA_GAME_FEATURE_IDS = FEEDBACK_GAME_FEATURE_IDS;
+const FEEDBACK_SCHEMA_GAME_COUNTER_CODES = FEEDBACK_GAME_COUNTER_CODES;
+const FEEDBACK_SCHEMA_GAME_ERROR_CODES = FEEDBACK_GAME_ERROR_CODES;
+
+interface CanonicalFeedbackFieldMetadata {
+  enumValues?: readonly unknown[];
+  itemType?: CanonicalFeedbackFieldMetadata;
+  _shape?: Record<string, CanonicalFeedbackFieldMetadata>;
+}
+
+const requireCanonicalStringEnum = (
+  field: CanonicalFeedbackFieldMetadata | undefined,
+): readonly string[] => {
+  const values = field?.enumValues;
+  if (
+    values === undefined ||
+    values.length === 0 ||
+    values.some((value) => typeof value !== "string")
+  ) {
+    throw new TypeError("Canonical feedback schema enum is unavailable.");
+  }
+  return Object.freeze([...values] as string[]);
+};
+
+const canonicalHourlyBugShape =
+  FeedbackHourlyBugReportSchema._shape as unknown as Record<
+    string,
+    CanonicalFeedbackFieldMetadata
+  >;
+const canonicalAdvisoryShape =
+  canonicalHourlyBugShape.advisories?.itemType?._shape;
+const FEEDBACK_SCHEMA_ADVISORY_CODES = requireCanonicalStringEnum(
+  canonicalAdvisoryShape?.code,
+);
+const FEEDBACK_SCHEMA_RECOMMENDATION_IDS = requireCanonicalStringEnum(
+  canonicalAdvisoryShape?.recommendationIds?.itemType,
+);
+const FEEDBACK_SCHEMA_ABUSE_BLOCK_BANDS = requireCanonicalStringEnum(
+  canonicalHourlyBugShape.abuseBlockBands?.itemType?._shape?.id,
+);
 
 const canonicalLiteralStringField = (
   description: string,
@@ -1958,11 +1920,7 @@ export const MCP_ADMIN_FEEDBACK_ACTIONS: readonly McpActionDescriptor[] =
         mcpAdminContractDescriptionKeys.actionGetFeedbackBugHealth,
       ),
       ...feedbackDescriptorMetadata,
-      schemaSource: {
-        packageName: MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE,
-        contractVersion: MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION,
-        schemaNames: ["FeedbackHourlyBugReportSchema"],
-      },
+      schemaSource: feedbackSchemaSource("FeedbackHourlyBugReportSchema"),
       execution: {
         method: "GET",
         path: "/api/admin/feedback/bug-health",
@@ -1997,11 +1955,9 @@ export const MCP_ADMIN_FEEDBACK_ACTIONS: readonly McpActionDescriptor[] =
         mcpAdminContractDescriptionKeys.actionGetFeedbackSatisfaction,
       ),
       ...feedbackDescriptorMetadata,
-      schemaSource: {
-        packageName: MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE,
-        contractVersion: MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION,
-        schemaNames: ["FeedbackDailySatisfactionReportSchema"],
-      },
+      schemaSource: feedbackSchemaSource(
+        "FeedbackDailySatisfactionReportSchema",
+      ),
       execution: {
         method: "GET",
         path: "/api/admin/feedback/satisfaction",
@@ -2036,14 +1992,10 @@ export const MCP_ADMIN_FEEDBACK_ACTIONS: readonly McpActionDescriptor[] =
         mcpAdminContractDescriptionKeys.actionListFeedbackAlerts,
       ),
       ...feedbackDescriptorMetadata,
-      schemaSource: {
-        packageName: MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE,
-        contractVersion: MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION,
-        schemaNames: [
-          "FeedbackHourlyBugReportSchema",
-          "FeedbackDailySatisfactionReportSchema",
-        ],
-      },
+      schemaSource: feedbackSchemaSource(
+        "FeedbackHourlyBugReportSchema",
+        "FeedbackDailySatisfactionReportSchema",
+      ),
       execution: {
         method: "GET",
         path: "/api/admin/feedback/alerts",
@@ -2090,11 +2042,9 @@ export const MCP_ADMIN_FEEDBACK_ACTIONS: readonly McpActionDescriptor[] =
         mcpAdminContractDescriptionKeys.actionGetFeedbackFreshness,
       ),
       ...feedbackDescriptorMetadata,
-      schemaSource: {
-        packageName: MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE,
-        contractVersion: MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION,
-        schemaNames: ["FeedbackProcessorCheckpointSchema"],
-      },
+      schemaSource: feedbackSchemaSource(
+        "FeedbackProcessorCheckpointSchema",
+      ),
       execution: {
         method: "GET",
         path: "/api/admin/feedback/freshness",
@@ -2127,14 +2077,10 @@ export const MCP_ADMIN_FEEDBACK_ACTIONS: readonly McpActionDescriptor[] =
         mcpAdminContractDescriptionKeys.actionListFeedbackStructuredEntries,
       ),
       ...feedbackDescriptorMetadata,
-      schemaSource: {
-        packageName: MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE,
-        contractVersion: MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION,
-        schemaNames: [
-          "FeedbackBugPacketSchema",
-          "FeedbackReviewPacketSchema",
-        ],
-      },
+      schemaSource: feedbackSchemaSource(
+        "FeedbackBugPacketSchema",
+        "FeedbackReviewPacketSchema",
+      ),
       execution: {
         method: "GET",
         path: "/api/admin/feedback/entries",

@@ -77,23 +77,12 @@ authentication for unrelated tools while the feedback flag is off.
 
 Persisted entry projections are discriminated by the exact
 `feedback-bug-packet` and `feedback-review-packet` identities. Reports,
-advisories, game diagnostics, and processor checkpoints currently use a
-pinned, source-hashed projection of the staged `@plasius/schema` feedback
-contract `1.0.0`, including exact kebab-case closed values and lowercase UUIDv4
-constraints. This package does not yet directly import or depend on
-`@plasius/schema`. The pinned parity fixture, transcribed from canonical schema
-source revision `172d993e0f9dc951716dc2ce46a753232c2ad1f7`, prevents this
-package from establishing a second feedback dialect while the corresponding
-package release is staged.
-
-Release of this feedback contract is blocked until a published
-`@plasius/schema` version satisfying `^1.4.0` can be consumed directly. The
-release-preparation change must then add `"@plasius/schema": "^1.4.0"` to
-`dependencies`, regenerate `package-lock.json` from the npm registry with
-lifecycle scripts disabled, replace the source-projected fixture and literals
-with direct package imports, and rerun the full validation gates. Source, file,
-Git, or unpublished semver dependency pins must not be added to the manifest
-or lockfile.
+advisories, game diagnostics, and processor checkpoints directly consume the
+published `@plasius/schema ^1.4.0` dependency and its feedback contract
+`1.0.0`. Descriptor vocabularies and source identities are imported from the
+canonical package, while direct package-schema parity tests prevent this
+package from establishing a second feedback dialect. The npm-registry lock is
+authoritative; source, file, and Git dependency pins are prohibited.
 
 ## Consequences
 
@@ -104,8 +93,8 @@ or lockfile.
 - Existing consumers must recognise contract version `2026-08-11.v6` and
   configure both `mcp:access` and `admin.feedback.read` before enabling the
   feedback family.
-- This package must not release the feedback family from the pinned projection;
-  direct consumption of released `@plasius/schema ^1.4.0` remains a release
-  blocker.
+- The feedback family must continue to consume the released
+  `@plasius/schema ^1.4.0` contract directly and fail validation when its
+  canonical schema identities or closed vocabularies diverge.
 - Runtime ingestion, storage, authorisation, reporting, audit, and mutation
   workflows remain outside this package.
