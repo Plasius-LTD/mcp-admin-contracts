@@ -3,16 +3,42 @@
 ## Unreleased
 
 - **Added**
-  - (placeholder)
+  - Added a privacy-safe, read-only `feedback` domain for bounded bug health,
+    satisfaction, deterministic alerts, processor freshness, and
+    reporter-identifier-free structured feedback entries.
+  - Added stable `feedback.mcp.enabled` rollout and `admin.feedback.read`
+    capability metadata, complete action-level `mcp:access` plus
+    `admin.feedback.read` OAuth scope metadata, unified fail-closed access
+    requirements, en-GB descriptions, and machine-readable privacy exclusions
+    and bounds.
+  - Added canonical packet, aggregate, advisory, diagnostics, and
+    processor-checkpoint projections with direct package-schema parity
+    coverage.
 
 - **Changed**
-  - (placeholder)
+  - Advanced the additive MCP Admin registry contract to `2026-08-11.v6`
+    while preserving all v0.4.0 Token reporting and adjustment domains.
+  - Modelled structured-entry filters as exact `packetType` variants so bug
+    and review filters cannot be combined.
+  - Replaced the staged source projection with direct registry consumption of
+    published `@plasius/schema ^1.4.0` canonical schema identities and closed
+    vocabularies.
 
 - **Fixed**
   - (placeholder)
 
 - **Security**
-  - (placeholder)
+  - Closed every feedback-specific input and output object projection with
+    `additionalProperties: false` so undeclared fields cannot cross the
+    Admin/MCP contract boundary.
+  - Made account, network, session, user-agent, locale, client-time, referrer,
+    credential, financial, government, filename, dimension, warning,
+    coordinate, adapter-identity, and model-artifact exclusions
+    machine-readable.
+  - Kept narrative, reporter correlation, binary images, storage references,
+    raw URLs, unrestricted scans, and mutations outside the public contract.
+  - Raised transitive `brace-expansion`, `nanoid`, and `postcss` override
+    floors to remediate the current high-severity development-tool advisories.
 
 ## [0.4.0] - 2026-08-08
 

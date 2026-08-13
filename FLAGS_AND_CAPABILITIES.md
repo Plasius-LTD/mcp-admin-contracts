@@ -47,6 +47,23 @@ keys, `mcp:access`, `admin.economy.read`, and
 `economy.finance-operations.view` as discovery metadata only. Disabled or
 unauthorized callers must receive neither callable tool discovery nor data.
 
+Current feedback contract:
+
+- `feedback.mcp.enabled` is the canonical parent rollout flag for the
+  read-only feedback action family.
+- `admin.feedback.read` is carried as the required capability. Complete
+  action-level OAuth metadata contains `mcp:access` and
+  `admin.feedback.read`.
+- Each feedback action's unified read-only access metadata repeats the complete
+  scope, capability, and rollout tuple so consuming runtimes can enforce it as
+  one fail-closed requirement set.
+- The global AI-plugin manifest keeps its existing `openid email profile mcp:access`
+  scopes until the site OAuth issuer and protected-resource metadata are
+  coordinated; feedback scope publication is not performed unconditionally.
+- The consuming admin/MCP runtime owns flag evaluation, entitlement,
+  authentication, fail-closed rate limits, and audit. If either control is
+  unavailable, feedback actions must be omitted or rejected.
+
 ## 5. Testing Expectations
 
 - Tests for new or changed exported flag/capability identifiers must verify the

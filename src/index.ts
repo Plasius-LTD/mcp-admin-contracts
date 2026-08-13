@@ -1,4 +1,25 @@
 import {
+  FEEDBACK_BACKEND_BUCKETS,
+  FEEDBACK_CONTRACT_VERSION,
+  FEEDBACK_FRAME_RATE_BUCKETS,
+  FEEDBACK_FRAME_TIME_BUCKETS,
+  FEEDBACK_GAME_COUNTER_CODES,
+  FEEDBACK_GAME_ERROR_CODES,
+  FEEDBACK_GAME_FEATURE_IDS,
+  FEEDBACK_INTENT_IDS,
+  FEEDBACK_PERSISTABLE_ISSUE_TYPES,
+  FEEDBACK_RENDERER_BUCKETS,
+  FEEDBACK_SENTIMENT_BUCKETS,
+  FEEDBACK_SURFACE_IDS,
+  FEEDBACK_THEME_IDS,
+  FEEDBACK_VIEWPORT_BUCKETS,
+  FeedbackBugPacketSchema,
+  FeedbackDailySatisfactionReportSchema,
+  FeedbackHourlyBugReportSchema,
+  FeedbackProcessorCheckpointSchema,
+  FeedbackReviewPacketSchema,
+} from "@plasius/schema";
+import {
   getMcpAdminContractDefaultTranslation,
   mcpAdminContractDescriptionKeys,
   mcpAdminContractsEnGbTranslations,
@@ -14,7 +35,7 @@ export {
 };
 export type { McpAdminContractDescriptionKey };
 
-export const MCP_ADMIN_CONTRACT_VERSION = "2026-08-08.v5";
+export const MCP_ADMIN_CONTRACT_VERSION = "2026-08-11.v6";
 export const MCP_ADMIN_REGISTRY_SOURCE = "@plasius/mcp-admin-contracts";
 
 export const MCP_ADMIN_FOUNDATION_FLAG_ID = "mcp.admin.foundation.enabled";
@@ -51,6 +72,71 @@ export const MCP_ASSET_PIPELINE_MANAGE_CAPABILITY =
   "asset.pipeline.mcp.manage";
 export const MCP_ASSET_SOURCE_MANAGE_CAPABILITY = "asset.source.manage";
 export const MCP_ASSET_CATALOG_REVIEW_CAPABILITY = "asset.catalog.review";
+export const MCP_ADMIN_FEEDBACK_FLAG_ID = "feedback.mcp.enabled";
+export const MCP_ADMIN_FEEDBACK_READ_CAPABILITY = "admin.feedback.read";
+export const MCP_ADMIN_BASE_OAUTH_SCOPE = MCP_ACCESS_SCOPE;
+export const MCP_ADMIN_FEEDBACK_READ_OAUTH_SCOPE =
+  MCP_ADMIN_FEEDBACK_READ_CAPABILITY;
+export const MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES = Object.freeze([
+  MCP_ADMIN_BASE_OAUTH_SCOPE,
+  MCP_ADMIN_FEEDBACK_READ_OAUTH_SCOPE,
+] as const);
+export const MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE = "@plasius/schema";
+export const MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION =
+  FEEDBACK_CONTRACT_VERSION;
+
+export const MCP_ADMIN_FEEDBACK_WINDOWS = [
+  "previous-utc-hour",
+  "last-24-hours",
+  "last-7-days",
+  "last-30-days",
+  "last-90-days",
+] as const;
+
+export const MCP_ADMIN_FEEDBACK_PACKET_TYPES = [
+  "feedback-bug-packet",
+  "feedback-review-packet",
+] as const;
+export const MCP_ADMIN_FEEDBACK_REPORT_TYPES = [
+  "feedback-hourly-bug-report",
+  "feedback-daily-satisfaction-report",
+] as const;
+export const MCP_ADMIN_FEEDBACK_PROCESSORS = [
+  "bug-hourly",
+  "review-daily",
+  "commit-reconciliation",
+] as const;
+export const MCP_ADMIN_FEEDBACK_PRIVACY_EXCLUSIONS = [
+  "account-identifiers",
+  "reporter-pseudonyms",
+  "network-identifiers",
+  "session-identifiers",
+  "user-agents",
+  "locales",
+  "client-timestamps",
+  "referrers",
+  "credential-material",
+  "financial-identifiers",
+  "government-identifiers",
+  "narrative",
+  "generated-summaries",
+  "quotations",
+  "embeddings",
+  "content-hashes",
+  "matched-values",
+  "model-traces",
+  "binary-images",
+  "filenames",
+  "exact-coordinates",
+  "exact-dimensions",
+  "adapter-fingerprints",
+  "raw-warnings",
+  "blob-references",
+  "raw-urls",
+  "unrestricted-scans",
+  "mutations",
+] as const;
+
 export const MCP_ADMIN_ECONOMY_ADJUSTMENTS_FLAG_ID =
   "mcp.admin-economy-adjustments.enabled";
 export const ECONOMY_OWNER_ADJUSTMENTS_FLAG_ID =
@@ -90,10 +176,17 @@ export interface McpFieldShape {
   enum?: readonly string[];
   itemType?: string;
   items?: McpFieldShape;
+  oneOf?: readonly McpFieldShape[];
+  discriminator?: string;
   properties?: Record<string, McpFieldShape>;
+  additionalProperties?: boolean;
+  constValue?: string | number | boolean;
   format?: string;
+  pattern?: string;
   minimum?: number;
   maximum?: number;
+  minLength?: number;
+  maxLength?: number;
   minItems?: number;
   maxItems?: number;
   default?: string | number | boolean;
@@ -121,6 +214,7 @@ export type McpActionDomain =
   | "analytics"
   | "userAggregation"
   | "economy"
+  | "feedback"
   | "assetCatalog"
   | "assetPipeline"
   | "assetSource"
@@ -140,6 +234,52 @@ export interface McpActionAccessRequirements {
   identityResolution: "not-available" | "separate-governed-operation";
 }
 
+export type McpFeedbackPrivacyExclusion =
+  (typeof MCP_ADMIN_FEEDBACK_PRIVACY_EXCLUSIONS)[number];
+
+export interface McpFeedbackPrivacyMetadata {
+  classification: "public-safe-structured-only";
+  readOnly: true;
+  bounded: true;
+  excludes: readonly McpFeedbackPrivacyExclusion[];
+  notes: readonly string[];
+}
+
+export interface McpCanonicalSchemaSource {
+  packageName: typeof MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE;
+  contractVersion: typeof MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION;
+  schemaNames: readonly string[];
+}
+
+const canonicalFeedbackSchemas = Object.freeze({
+  FeedbackBugPacketSchema,
+  FeedbackReviewPacketSchema,
+  FeedbackHourlyBugReportSchema,
+  FeedbackDailySatisfactionReportSchema,
+  FeedbackProcessorCheckpointSchema,
+});
+
+type CanonicalFeedbackSchemaName = keyof typeof canonicalFeedbackSchemas;
+
+const feedbackSchemaSource = (
+  ...schemaNames: readonly CanonicalFeedbackSchemaName[]
+): McpCanonicalSchemaSource => {
+  for (const schemaName of schemaNames) {
+    if (
+      canonicalFeedbackSchemas[schemaName].meta.version !==
+      MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION
+    ) {
+      throw new TypeError("Canonical feedback schema version mismatch.");
+    }
+  }
+
+  return {
+    packageName: MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE,
+    contractVersion: MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION,
+    schemaNames: [...schemaNames],
+  };
+};
+
 export interface McpActionDescriptor {
   name: string;
   description: string;
@@ -147,6 +287,9 @@ export interface McpActionDescriptor {
   descriptionDefault: string;
   domain: McpActionDomain;
   rolloutFlag: string;
+  oauthScopes?: readonly string[];
+  privacy?: McpFeedbackPrivacyMetadata;
+  schemaSource?: McpCanonicalSchemaSource;
   availability: "existing" | "near-future";
   execution: McpActionExecution;
   input: Record<string, McpFieldShape>;
@@ -164,6 +307,9 @@ export interface McpActionSummary {
   descriptionDefault: string;
   domain: McpActionDomain;
   rolloutFlag: string;
+  oauthScopes?: readonly string[];
+  privacy?: McpFeedbackPrivacyMetadata;
+  schemaSource?: McpCanonicalSchemaSource;
   availability: McpActionDescriptor["availability"];
   execution: McpActionExecution;
   requiredCapability?: string;
@@ -213,6 +359,8 @@ export interface McpContextResponse {
   actionFamilies: {
     domain: McpActionFamilyDomain;
     rolloutFlag: string;
+    requiredCapability?: string;
+    oauthScopes?: readonly string[];
     actions: string[];
   }[];
   extensionRules: {
@@ -232,6 +380,9 @@ export interface McpSchemaResponse {
     {
       domain: McpActionDomain;
       rolloutFlag: string;
+      oauthScopes?: readonly string[];
+      privacy?: McpFeedbackPrivacyMetadata;
+      schemaSource?: McpCanonicalSchemaSource;
       availability: McpActionDescriptor["availability"];
       execution: McpActionExecution;
       input: Record<string, McpFieldShape>;
@@ -279,6 +430,15 @@ const numberField = (
   ...options,
 });
 
+const integerField = (
+  description: string,
+  options: Partial<McpFieldShape> = {},
+): McpFieldShape => ({
+  type: "integer",
+  description,
+  ...options,
+});
+
 const objectField = (
   description: string,
   properties: Record<string, McpFieldShape>,
@@ -290,6 +450,16 @@ const objectField = (
   ...options,
 });
 
+const feedbackClosedObjectField = (
+  description: string,
+  properties: Record<string, McpFieldShape>,
+  options: Partial<McpFieldShape> = {},
+): McpFieldShape =>
+  objectField(description, properties, {
+    ...options,
+    additionalProperties: false,
+  });
+
 const arrayField = (
   description: string,
   itemType: string,
@@ -298,6 +468,32 @@ const arrayField = (
   type: "array",
   description,
   itemType,
+  ...options,
+});
+
+const arrayOfField = (
+  description: string,
+  itemType: string,
+  items: McpFieldShape,
+  options: Partial<McpFieldShape> = {},
+): McpFieldShape => ({
+  type: "array",
+  description,
+  itemType,
+  items,
+  ...options,
+});
+
+const discriminatedUnionField = (
+  description: string,
+  discriminator: string,
+  variants: readonly McpFieldShape[],
+  options: Partial<McpFieldShape> = {},
+): McpFieldShape => ({
+  type: "discriminated-union",
+  description,
+  discriminator,
+  oneOf: variants,
   ...options,
 });
 
@@ -864,6 +1060,1052 @@ const adminTokenTrendPointField = objectField(
     anomaly: adminTokenAnomalyField,
   },
 );
+export const MCP_ADMIN_FEEDBACK_MAX_PAGE_SIZE = 100;
+export const MCP_ADMIN_FEEDBACK_MAX_CURSOR_LENGTH = 512;
+
+export const MCP_ADMIN_FEEDBACK_BUG_HEALTH_WINDOWS = [
+  "previous-utc-hour",
+  "last-24-hours",
+  "last-7-days",
+] as const satisfies readonly (typeof MCP_ADMIN_FEEDBACK_WINDOWS)[number][];
+
+export const MCP_ADMIN_FEEDBACK_SATISFACTION_WINDOWS = [
+  "last-7-days",
+  "last-30-days",
+  "last-90-days",
+] as const satisfies readonly (typeof MCP_ADMIN_FEEDBACK_WINDOWS)[number][];
+
+export const MCP_ADMIN_FEEDBACK_ENTRY_WINDOWS = [
+  "last-24-hours",
+  "last-7-days",
+  "last-30-days",
+  "last-90-days",
+] as const satisfies readonly (typeof MCP_ADMIN_FEEDBACK_WINDOWS)[number][];
+
+export const MCP_ADMIN_FEEDBACK_ALERT_WINDOWS = [
+  "last-24-hours",
+  "last-7-days",
+] as const satisfies readonly (typeof MCP_ADMIN_FEEDBACK_WINDOWS)[number][];
+
+export const MCP_ADMIN_FEEDBACK_PRIVACY_METADATA: McpFeedbackPrivacyMetadata =
+  Object.freeze({
+    classification: "public-safe-structured-only",
+    readOnly: true,
+    bounded: true,
+    excludes: Object.freeze([...MCP_ADMIN_FEEDBACK_PRIVACY_EXCLUSIONS]),
+    notes: Object.freeze([
+      "Responses contain only schema-validated structured fields and materialised report metadata.",
+      "The runtime must enforce admin authentication, `mcp:access` plus `admin.feedback.read`, the rollout flag, bounded cursors and ranges, fail-closed rate limits, and dedicated audit.",
+      "Narrative-derived values are closed classifications only; no summaries, quotations, embeddings, hashes, matched values, or model traces are permitted.",
+    ]),
+  });
+
+const feedbackReadAccess = {
+  oauthScopes: [...MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES],
+  capabilities: [MCP_ADMIN_FEEDBACK_READ_CAPABILITY],
+  rolloutFlags: [MCP_ADMIN_FEEDBACK_FLAG_ID],
+  mode: "read-only",
+  identityResolution: "not-available",
+} as const satisfies McpActionAccessRequirements;
+
+const feedbackPageMetadataField = (
+  allowedWindows: readonly string[],
+): McpFieldShape =>
+  feedbackClosedObjectField("Bounded read-response metadata.", {
+    window: stringField("Closed server-owned response window.", {
+      enum: [...allowedWindows],
+    }),
+    windowStart: stringField("Inclusive UTC response-window boundary.", {
+      format: "date-time",
+    }),
+    windowEnd: stringField("Exclusive UTC response-window boundary.", {
+      format: "date-time",
+    }),
+    generatedAt: stringField("UTC time at which this response projection was produced.", {
+      format: "date-time",
+    }),
+    returnedCount: integerField("Number of records in this bounded page.", {
+      minimum: 0,
+      maximum: MCP_ADMIN_FEEDBACK_MAX_PAGE_SIZE,
+    }),
+    nextCursor: stringField("Opaque continuation cursor when more results exist.", {
+      required: false,
+      minLength: 1,
+      maxLength: MCP_ADMIN_FEEDBACK_MAX_CURSOR_LENGTH,
+      pattern: "^[A-Za-z0-9_-]+$",
+    }),
+  });
+
+const FEEDBACK_SCHEMA_MAX_COUNT = 1_000_000_000;
+const FEEDBACK_SCHEMA_UUID_V4_PATTERN =
+  "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$";
+const FEEDBACK_SCHEMA_SAFE_ID_PATTERN =
+  "^[A-Za-z0-9][A-Za-z0-9._:-]*$";
+const FEEDBACK_SCHEMA_SURFACE_IDS = FEEDBACK_SURFACE_IDS;
+const FEEDBACK_SCHEMA_PERSISTABLE_ISSUE_TYPES =
+  FEEDBACK_PERSISTABLE_ISSUE_TYPES;
+const FEEDBACK_SCHEMA_SENTIMENT_BUCKETS = FEEDBACK_SENTIMENT_BUCKETS;
+const FEEDBACK_SCHEMA_INTENT_IDS = FEEDBACK_INTENT_IDS;
+const FEEDBACK_SCHEMA_THEME_IDS = FEEDBACK_THEME_IDS;
+const FEEDBACK_SCHEMA_RENDERER_BUCKETS = FEEDBACK_RENDERER_BUCKETS;
+const FEEDBACK_SCHEMA_BACKEND_BUCKETS = FEEDBACK_BACKEND_BUCKETS;
+const FEEDBACK_SCHEMA_VIEWPORT_BUCKETS = FEEDBACK_VIEWPORT_BUCKETS;
+const FEEDBACK_SCHEMA_FRAME_RATE_BUCKETS = FEEDBACK_FRAME_RATE_BUCKETS;
+const FEEDBACK_SCHEMA_FRAME_TIME_BUCKETS = FEEDBACK_FRAME_TIME_BUCKETS;
+const FEEDBACK_SCHEMA_GAME_FEATURE_IDS = FEEDBACK_GAME_FEATURE_IDS;
+const FEEDBACK_SCHEMA_GAME_COUNTER_CODES = FEEDBACK_GAME_COUNTER_CODES;
+const FEEDBACK_SCHEMA_GAME_ERROR_CODES = FEEDBACK_GAME_ERROR_CODES;
+
+interface CanonicalFeedbackFieldMetadata {
+  enumValues?: readonly unknown[];
+  itemType?: CanonicalFeedbackFieldMetadata;
+  _shape?: Record<string, CanonicalFeedbackFieldMetadata>;
+}
+
+const requireCanonicalStringEnum = (
+  field: CanonicalFeedbackFieldMetadata | undefined,
+): readonly string[] => {
+  const values = field?.enumValues;
+  if (
+    values === undefined ||
+    values.length === 0 ||
+    values.some((value) => typeof value !== "string")
+  ) {
+    throw new TypeError("Canonical feedback schema enum is unavailable.");
+  }
+  return Object.freeze([...values] as string[]);
+};
+
+const canonicalHourlyBugShape =
+  FeedbackHourlyBugReportSchema._shape as unknown as Record<
+    string,
+    CanonicalFeedbackFieldMetadata
+  >;
+const canonicalAdvisoryShape =
+  canonicalHourlyBugShape.advisories?.itemType?._shape;
+const FEEDBACK_SCHEMA_ADVISORY_CODES = requireCanonicalStringEnum(
+  canonicalAdvisoryShape?.code,
+);
+const FEEDBACK_SCHEMA_RECOMMENDATION_IDS = requireCanonicalStringEnum(
+  canonicalAdvisoryShape?.recommendationIds?.itemType,
+);
+const FEEDBACK_SCHEMA_ABUSE_BLOCK_BANDS = requireCanonicalStringEnum(
+  canonicalHourlyBugShape.abuseBlockBands?.itemType?._shape?.id,
+);
+
+const canonicalLiteralStringField = (
+  description: string,
+  value: string,
+): McpFieldShape =>
+  stringField(description, {
+    enum: [value],
+    constValue: value,
+  });
+
+const canonicalUuidV4Field = (description: string): McpFieldShape =>
+  stringField(description, {
+    format: "uuid",
+    minLength: 36,
+    maxLength: 36,
+    pattern: FEEDBACK_SCHEMA_UUID_V4_PATTERN,
+  });
+
+const canonicalSafeIdField = (
+  description: string,
+  maximum = 128,
+): McpFieldShape =>
+  stringField(description, {
+    minLength: 1,
+    maxLength: maximum,
+    pattern: FEEDBACK_SCHEMA_SAFE_ID_PATTERN,
+  });
+
+const canonicalDateTimeField = (description: string): McpFieldShape =>
+  stringField(description, {
+    format: "date-time",
+  });
+
+const canonicalCountField = (
+  description: string,
+  options: Partial<McpFieldShape> = {},
+): McpFieldShape =>
+  integerField(description, {
+    minimum: 0,
+    maximum: FEEDBACK_SCHEMA_MAX_COUNT,
+    ...options,
+  });
+
+const canonicalSchemaIdentityFields = (type: string) => ({
+  type: canonicalLiteralStringField("Canonical @plasius/schema identity.", type),
+  version: canonicalLiteralStringField(
+    "Canonical feedback contract version.",
+    MCP_ADMIN_FEEDBACK_SCHEMA_CONTRACT_VERSION,
+  ),
+});
+
+const canonicalStringArrayField = (
+  description: string,
+  enumValues: readonly string[],
+  maximum: number,
+  options: Partial<McpFieldShape> = {},
+): McpFieldShape =>
+  arrayOfField(
+    description,
+    "string",
+    stringField("Closed canonical value.", { enum: [...enumValues] }),
+    { maxItems: maximum, ...options },
+  );
+
+const canonicalAnalyzedProjectionField = feedbackClosedObjectField(
+  "Canonical analyzed `FeedbackDerivedAnalysis` projection.",
+  {
+    ...canonicalSchemaIdentityFields("feedback-derived-analysis"),
+    status: canonicalLiteralStringField(
+      "Canonical analysis status.",
+      "analyzed",
+    ),
+    sentiment: stringField("Closed canonical sentiment bucket.", {
+      enum: [...FEEDBACK_SCHEMA_SENTIMENT_BUCKETS],
+    }),
+    intentIds: canonicalStringArrayField(
+      "Unique closed canonical intent identifiers.",
+      FEEDBACK_SCHEMA_INTENT_IDS,
+      8,
+    ),
+    themeIds: canonicalStringArrayField(
+      "Unique closed canonical theme identifiers.",
+      FEEDBACK_SCHEMA_THEME_IDS,
+      8,
+    ),
+    confidence: stringField("Closed classifier confidence.", {
+      enum: ["low", "medium", "high"],
+    }),
+    policyVersion: stringField("Pinned canonical privacy policy version.", {
+      enum: ["feedback-privacy-en-v1"],
+    }),
+    modelVersion: stringField("Pinned canonical local model version.", {
+      enum: ["feedback-en-rules-v1"],
+    }),
+    deterministicRedactionCount: canonicalCountField(
+      "Browser deterministic-redaction count.",
+      { maximum: 4_000 },
+    ),
+    scannerRedactionCount: canonicalCountField(
+      "Private-scanner redaction count.",
+      { maximum: 4_000 },
+    ),
+  },
+);
+
+const canonicalStructuredOnlyProjectionField = feedbackClosedObjectField(
+  "Canonical structured-only `FeedbackDerivedAnalysis` projection.",
+  {
+    ...canonicalSchemaIdentityFields("feedback-derived-analysis"),
+    status: canonicalLiteralStringField(
+      "Canonical analysis status.",
+      "structured-only",
+    ),
+    intentIds: canonicalStringArrayField(
+      "Structured-only projections contain no intent identifiers.",
+      FEEDBACK_SCHEMA_INTENT_IDS,
+      0,
+    ),
+    themeIds: canonicalStringArrayField(
+      "Structured-only projections contain no theme identifiers.",
+      FEEDBACK_SCHEMA_THEME_IDS,
+      0,
+    ),
+    policyVersion: stringField("Pinned canonical privacy policy version.", {
+      enum: ["feedback-privacy-en-v1"],
+    }),
+    modelVersion: stringField("Pinned canonical local model version.", {
+      enum: ["feedback-en-rules-v1"],
+    }),
+    deterministicRedactionCount: canonicalCountField(
+      "Browser deterministic-redaction count.",
+      { maximum: 4_000 },
+    ),
+    scannerRedactionCount: canonicalCountField(
+      "Private-scanner redaction count.",
+      { maximum: 4_000 },
+    ),
+  },
+);
+
+const canonicalAnalysisProjectionField = discriminatedUnionField(
+  "Canonical closed `FeedbackDerivedAnalysis` projection.",
+  "status",
+  [
+    canonicalAnalyzedProjectionField,
+    canonicalStructuredOnlyProjectionField,
+  ],
+  { required: false },
+);
+
+const canonicalGameCounterField = feedbackClosedObjectField(
+  "Canonical bounded renderer diagnostic counter.",
+  {
+    code: stringField("Closed canonical counter code.", {
+      enum: [...FEEDBACK_SCHEMA_GAME_COUNTER_CODES],
+    }),
+    count: canonicalCountField("Positive bounded counter value.", {
+      minimum: 1,
+      maximum: 10_000,
+    }),
+  },
+);
+
+const canonicalGameDiagnosticsVariantField = (
+  surfaceId: "site.generator" | "site.gpu-demo",
+  provenanceContractId:
+    | "generator.renderer-diagnostics.v1"
+    | "gpu-demo.renderer-diagnostics.v1",
+): McpFieldShape =>
+  feedbackClosedObjectField("Canonical bounded renderer-owned game diagnostics.", {
+    ...canonicalSchemaIdentityFields("feedback-game-diagnostics"),
+    surfaceId: canonicalLiteralStringField(
+      "Canonical diagnostics-eligible surface.",
+      surfaceId,
+    ),
+    consentConfirmed: booleanField("Explicit diagnostics consent.", {
+      constValue: true,
+    }),
+    provenanceContractId: canonicalLiteralStringField(
+      "Renderer-owned provenance contract.",
+      provenanceContractId,
+    ),
+    renderer: stringField("Coarse canonical renderer bucket.", {
+      enum: [...FEEDBACK_SCHEMA_RENDERER_BUCKETS],
+    }),
+    backend: stringField("Coarse canonical execution-backend bucket.", {
+      enum: [...FEEDBACK_SCHEMA_BACKEND_BUCKETS],
+    }),
+    viewportBucket: stringField("Coarse canonical viewport bucket.", {
+      enum: [...FEEDBACK_SCHEMA_VIEWPORT_BUCKETS],
+    }),
+    frameRateBucket: stringField("Coarse canonical frame-rate bucket.", {
+      enum: [...FEEDBACK_SCHEMA_FRAME_RATE_BUCKETS],
+    }),
+    frameTimeBucket: stringField("Coarse canonical frame-time bucket.", {
+      enum: [...FEEDBACK_SCHEMA_FRAME_TIME_BUCKETS],
+    }),
+    featureIds: canonicalStringArrayField(
+      "Unique closed renderer feature identifiers.",
+      FEEDBACK_SCHEMA_GAME_FEATURE_IDS,
+      FEEDBACK_SCHEMA_GAME_FEATURE_IDS.length,
+    ),
+    counters: arrayOfField(
+      "Unique bounded renderer counters.",
+      "FeedbackGameDiagnosticCounter",
+      canonicalGameCounterField,
+      { maxItems: 32 },
+    ),
+    errorCodes: canonicalStringArrayField(
+      "Unique closed renderer error codes.",
+      FEEDBACK_SCHEMA_GAME_ERROR_CODES,
+      FEEDBACK_SCHEMA_GAME_ERROR_CODES.length,
+    ),
+  });
+
+const canonicalGameDiagnosticsField = discriminatedUnionField(
+  "Canonical `FeedbackGameDiagnostics`; its surface must equal the containing bug packet surface and it cannot express pixels, DOM, text, URLs, filenames, coordinates, or adapter fingerprints.",
+  "surfaceId",
+  [
+    canonicalGameDiagnosticsVariantField(
+      "site.generator",
+      "generator.renderer-diagnostics.v1",
+    ),
+    canonicalGameDiagnosticsVariantField(
+      "site.gpu-demo",
+      "gpu-demo.renderer-diagnostics.v1",
+    ),
+  ],
+  { required: false },
+);
+
+const canonicalBugPacketField = feedbackClosedObjectField(
+  "Canonical identifier-free immutable `FeedbackBugPacket`.",
+  {
+    ...canonicalSchemaIdentityFields("feedback-bug-packet"),
+    packetId: canonicalUuidV4Field("Opaque canonical packet UUIDv4."),
+    acceptedAt: canonicalDateTimeField("Server-owned packet acceptance time."),
+    surfaceId: stringField("Canonical capability-projected surface identifier.", {
+      enum: [...FEEDBACK_SCHEMA_SURFACE_IDS],
+    }),
+    issueType: stringField("Canonical persistable issue type.", {
+      enum: [...FEEDBACK_SCHEMA_PERSISTABLE_ISSUE_TYPES],
+    }),
+    severity: integerField("Canonical bug severity.", {
+      minimum: 1,
+      maximum: 5,
+    }),
+    releaseId: canonicalSafeIdField("Server-owned release identifier."),
+    buildId: canonicalSafeIdField("Server-owned build identifier."),
+    analysis: canonicalAnalysisProjectionField,
+    gameDiagnostics: canonicalGameDiagnosticsField,
+  },
+);
+
+const canonicalReviewPacketField = feedbackClosedObjectField(
+  "Canonical identifier-free immutable `FeedbackReviewPacket`.",
+  {
+    ...canonicalSchemaIdentityFields("feedback-review-packet"),
+    packetId: canonicalUuidV4Field("Opaque canonical packet UUIDv4."),
+    acceptedAt: canonicalDateTimeField("Server-owned packet acceptance time."),
+    satisfaction: integerField("Canonical satisfaction rating.", {
+      minimum: 1,
+      maximum: 5,
+    }),
+    analysis: canonicalAnalysisProjectionField,
+  },
+);
+
+const canonicalFeedbackPacketField = discriminatedUnionField(
+  "Canonical bug/review packet discriminated by exact schema identity.",
+  "type",
+  [canonicalBugPacketField, canonicalReviewPacketField],
+);
+
+const canonicalDistributionField = (
+  description: string,
+  idField: McpFieldShape,
+  maximum: number,
+): McpFieldShape =>
+  arrayOfField(
+    `${description} Bucket identifiers are unique as required by the canonical schema.`,
+    "FeedbackCountBucket",
+    feedbackClosedObjectField("Canonical count bucket.", {
+      id: idField,
+      count: canonicalCountField("Canonical non-negative bucket count."),
+    }),
+    { maxItems: maximum },
+  );
+
+const canonicalAdvisoryField = feedbackClosedObjectField(
+  "Canonical deterministic feedback advisory.",
+  {
+    code: stringField("Closed canonical advisory code.", {
+      enum: [...FEEDBACK_SCHEMA_ADVISORY_CODES],
+    }),
+    level: stringField("Canonical advisory level.", {
+      enum: ["advisory", "critical"],
+    }),
+    triggerCount: canonicalCountField("Positive deterministic trigger count.", {
+      minimum: 1,
+    }),
+    recommendationIds: canonicalStringArrayField(
+      "One to eight deterministic recommendation identifiers.",
+      FEEDBACK_SCHEMA_RECOMMENDATION_IDS,
+      8,
+      { minItems: 1 },
+    ),
+  },
+);
+
+const canonicalAdvisoriesField = arrayOfField(
+  "Canonical deterministic advisories.",
+  "FeedbackAdvisory",
+  canonicalAdvisoryField,
+  { maxItems: 32 },
+);
+
+const canonicalHourlyBugReportField = feedbackClosedObjectField(
+  "Canonical materialised `FeedbackHourlyBugReport`.",
+  {
+    ...canonicalSchemaIdentityFields("feedback-hourly-bug-report"),
+    reportId: canonicalUuidV4Field("Opaque canonical report UUIDv4."),
+    windowStart: canonicalDateTimeField("Inclusive aligned UTC hour boundary."),
+    windowEnd: canonicalDateTimeField("Exclusive aligned UTC hour boundary."),
+    revision: integerField("Positive canonical materialisation revision.", {
+      minimum: 1,
+      maximum: 1_000_000,
+    }),
+    generatedAt: canonicalDateTimeField("Canonical materialisation time."),
+    acceptedCount: canonicalCountField("Accepted bug-packet count."),
+    rejectedCount: canonicalCountField("Rejected bug-submission count."),
+    diagnosticsAttachedCount: canonicalCountField(
+      "Accepted packets carrying canonical game diagnostics.",
+    ),
+    deterministicRedactionCount: canonicalCountField(
+      "Total browser deterministic redactions.",
+    ),
+    scannerRedactionCount: canonicalCountField(
+      "Total private-scanner redactions.",
+    ),
+    processorLagSeconds: canonicalCountField(
+      "Exact materialisation lag from `windowEnd`.",
+    ),
+    rates: feedbackClosedObjectField("Canonical rejection and redaction rates.", {
+      rejectionRate: numberField("Rejected share of submitted records.", {
+        minimum: 0,
+        maximum: 1,
+      }),
+      deterministicRedactionsPerAccepted: numberField(
+        "Deterministic redactions per accepted packet.",
+        { minimum: 0, maximum: 4_000 },
+      ),
+      scannerRedactionsPerAccepted: numberField(
+        "Scanner redactions per accepted packet.",
+        { minimum: 0, maximum: 4_000 },
+      ),
+    }),
+    traffic: feedbackClosedObjectField("Safe precomputed traffic denominator.", {
+      denominator: canonicalCountField("Safe traffic denominator."),
+      acceptedPerTenThousand: numberField(
+        "Accepted bugs per ten thousand traffic units when denominator is non-zero.",
+        {
+          required: false,
+          minimum: 0,
+          maximum: FEEDBACK_SCHEMA_MAX_COUNT,
+        },
+      ),
+    }),
+    targetDistribution: canonicalDistributionField(
+      "Counts by canonical feedback surface.",
+      stringField("Canonical surface identifier.", {
+        enum: [...FEEDBACK_SCHEMA_SURFACE_IDS],
+      }),
+      256,
+    ),
+    issueTypeDistribution: canonicalDistributionField(
+      "Counts by canonical persistable issue type.",
+      stringField("Canonical persistable issue type.", {
+        enum: [...FEEDBACK_SCHEMA_PERSISTABLE_ISSUE_TYPES],
+      }),
+      9,
+    ),
+    severityDistribution: canonicalDistributionField(
+      "Counts by canonical severity identifier.",
+      stringField("Canonical severity identifier.", {
+        enum: ["1", "2", "3", "4", "5"],
+      }),
+      5,
+    ),
+    intentDistribution: canonicalDistributionField(
+      "Counts by canonical derived intent.",
+      stringField("Canonical intent identifier.", {
+        enum: [...FEEDBACK_SCHEMA_INTENT_IDS],
+      }),
+      FEEDBACK_SCHEMA_INTENT_IDS.length,
+    ),
+    buildDistribution: canonicalDistributionField(
+      "Counts by server-owned build identifier.",
+      canonicalSafeIdField("Server-owned build identifier."),
+      128,
+    ),
+    rendererDistribution: canonicalDistributionField(
+      "Counts by canonical renderer bucket.",
+      stringField("Canonical renderer bucket.", {
+        enum: [...FEEDBACK_SCHEMA_RENDERER_BUCKETS],
+      }),
+      FEEDBACK_SCHEMA_RENDERER_BUCKETS.length,
+    ),
+    backendDistribution: canonicalDistributionField(
+      "Counts by canonical execution-backend bucket.",
+      stringField("Canonical backend bucket.", {
+        enum: [...FEEDBACK_SCHEMA_BACKEND_BUCKETS],
+      }),
+      FEEDBACK_SCHEMA_BACKEND_BUCKETS.length,
+    ),
+    viewportDistribution: canonicalDistributionField(
+      "Counts by canonical viewport bucket.",
+      stringField("Canonical viewport bucket.", {
+        enum: [...FEEDBACK_SCHEMA_VIEWPORT_BUCKETS],
+      }),
+      FEEDBACK_SCHEMA_VIEWPORT_BUCKETS.length,
+    ),
+    frameRateDistribution: canonicalDistributionField(
+      "Counts by canonical frame-rate bucket.",
+      stringField("Canonical frame-rate bucket.", {
+        enum: [...FEEDBACK_SCHEMA_FRAME_RATE_BUCKETS],
+      }),
+      FEEDBACK_SCHEMA_FRAME_RATE_BUCKETS.length,
+    ),
+    frameTimeDistribution: canonicalDistributionField(
+      "Counts by canonical frame-time bucket.",
+      stringField("Canonical frame-time bucket.", {
+        enum: [...FEEDBACK_SCHEMA_FRAME_TIME_BUCKETS],
+      }),
+      FEEDBACK_SCHEMA_FRAME_TIME_BUCKETS.length,
+    ),
+    diagnosticFeatureDistribution: canonicalDistributionField(
+      "Counts by canonical renderer feature identifier.",
+      stringField("Canonical renderer feature identifier.", {
+        enum: [...FEEDBACK_SCHEMA_GAME_FEATURE_IDS],
+      }),
+      FEEDBACK_SCHEMA_GAME_FEATURE_IDS.length,
+    ),
+    diagnosticCounterDistribution: canonicalDistributionField(
+      "Summed canonical renderer counters.",
+      stringField("Canonical renderer counter code.", {
+        enum: [...FEEDBACK_SCHEMA_GAME_COUNTER_CODES],
+      }),
+      FEEDBACK_SCHEMA_GAME_COUNTER_CODES.length,
+    ),
+    diagnosticErrorDistribution: canonicalDistributionField(
+      "Counts by canonical renderer error code.",
+      stringField("Canonical renderer error code.", {
+        enum: [...FEEDBACK_SCHEMA_GAME_ERROR_CODES],
+      }),
+      FEEDBACK_SCHEMA_GAME_ERROR_CODES.length,
+    ),
+    abuseBlockBands: canonicalDistributionField(
+      "Counts by canonical abuse-block band.",
+      stringField("Canonical abuse-block band.", {
+        enum: [...FEEDBACK_SCHEMA_ABUSE_BLOCK_BANDS],
+      }),
+      16,
+    ),
+    comparison: feedbackClosedObjectField("Canonical prior-period comparison.", {
+      previousHourRatio: numberField("Ratio to the previous UTC hour.", {
+        minimum: 0,
+        maximum: 1_000,
+      }),
+      sevenDaySameHourRatio: numberField(
+        "Ratio to the seven-day same-hour baseline.",
+        { minimum: 0, maximum: 1_000 },
+      ),
+    }),
+    advisories: canonicalAdvisoriesField,
+  },
+);
+
+const canonicalDailySatisfactionReportField = feedbackClosedObjectField(
+  "Canonical materialised `FeedbackDailySatisfactionReport`.",
+  {
+    ...canonicalSchemaIdentityFields("feedback-daily-satisfaction-report"),
+    reportId: canonicalUuidV4Field("Opaque canonical report UUIDv4."),
+    windowStart: canonicalDateTimeField("Inclusive aligned UTC day boundary."),
+    windowEnd: canonicalDateTimeField("Exclusive aligned UTC day boundary."),
+    revision: integerField("Positive canonical materialisation revision.", {
+      minimum: 1,
+      maximum: 1_000_000,
+    }),
+    generatedAt: canonicalDateTimeField("Canonical materialisation time."),
+    processorLagSeconds: canonicalCountField(
+      "Exact materialisation lag from `windowEnd`.",
+    ),
+    acceptedReviewCount: canonicalCountField("Accepted review-packet count."),
+    meanStars: numberField(
+      "Mean stars; absent exactly when `acceptedReviewCount` is zero.",
+      { required: false, minimum: 1, maximum: 5 },
+    ),
+    medianStars: numberField(
+      "Median stars; absent exactly when `acceptedReviewCount` is zero.",
+      { required: false, minimum: 1, maximum: 5 },
+    ),
+    starDistribution: canonicalDistributionField(
+      "Counts by canonical star identifier.",
+      stringField("Canonical star identifier.", {
+        enum: ["1", "2", "3", "4", "5"],
+      }),
+      5,
+    ),
+    sentimentDistribution: canonicalDistributionField(
+      "Counts by canonical sentiment bucket.",
+      stringField("Canonical sentiment bucket.", {
+        enum: [...FEEDBACK_SCHEMA_SENTIMENT_BUCKETS],
+      }),
+      FEEDBACK_SCHEMA_SENTIMENT_BUCKETS.length,
+    ),
+    intentDistribution: canonicalDistributionField(
+      "Counts by canonical derived intent.",
+      stringField("Canonical intent identifier.", {
+        enum: [...FEEDBACK_SCHEMA_INTENT_IDS],
+      }),
+      FEEDBACK_SCHEMA_INTENT_IDS.length,
+    ),
+    rollingWindows: arrayOfField(
+      "Exactly one canonical 7-, 30-, and 90-day rolling window.",
+      "FeedbackRollingSatisfaction",
+      feedbackClosedObjectField("Canonical rolling satisfaction window.", {
+        period: stringField("Canonical rolling period.", {
+          enum: ["7-days", "30-days", "90-days"],
+        }),
+        reviewCount: canonicalCountField("Accepted reviews in the period."),
+        meanStars: numberField(
+          "Mean stars; absent exactly when `reviewCount` is zero.",
+          { required: false, minimum: 1, maximum: 5 },
+        ),
+      }),
+      { minItems: 3, maxItems: 3 },
+    ),
+    previousPeriodDeltaStars: numberField(
+      "Seven-day mean-star delta from the preceding seven-day period.",
+      { required: false, minimum: -4, maximum: 4 },
+    ),
+    advisories: canonicalAdvisoriesField,
+  },
+);
+
+const canonicalProcessorCheckpointVariantField = (
+  processor: (typeof MCP_ADMIN_FEEDBACK_PROCESSORS)[number],
+): McpFieldShape =>
+  feedbackClosedObjectField("Canonical replay-safe processor checkpoint.", {
+    ...canonicalSchemaIdentityFields("feedback-processor-checkpoint"),
+    checkpointId: canonicalSafeIdField(
+      "Canonical checkpoint identifier.",
+      160,
+    ),
+    processor: canonicalLiteralStringField(
+      "Canonical feedback processor.",
+      processor,
+    ),
+    windowKey: canonicalSafeIdField("Canonical processor window key.", 160),
+    revision: integerField("Positive canonical processor revision.", {
+      minimum: 1,
+      maximum: 1_000_000,
+    }),
+    completedAt: canonicalDateTimeField("Canonical completion time."),
+    ...(processor === "commit-reconciliation"
+      ? {}
+      : {
+          reportId: canonicalUuidV4Field(
+            "Opaque UUIDv4 of the materialised report.",
+          ),
+        }),
+  });
+
+const canonicalProcessorCheckpointField = discriminatedUnionField(
+  "Canonical `FeedbackProcessorCheckpoint`.",
+  "processor",
+  MCP_ADMIN_FEEDBACK_PROCESSORS.map(canonicalProcessorCheckpointVariantField),
+);
+
+const feedbackCanonicalReportListMetadataField = (
+  allowedWindows: readonly string[],
+  maximumReports: number,
+): McpFieldShape =>
+  feedbackClosedObjectField("Bounded report-list response metadata.", {
+    window: stringField("Closed server-owned lookback selector.", {
+      enum: [...allowedWindows],
+    }),
+    windowStart: canonicalDateTimeField("Inclusive returned range boundary."),
+    windowEnd: canonicalDateTimeField("Exclusive returned range boundary."),
+    generatedAt: canonicalDateTimeField("Response projection time."),
+    returnedCount: canonicalCountField("Reports returned.", {
+      maximum: maximumReports,
+    }),
+  });
+
+const canonicalAlertProjectionField = feedbackClosedObjectField(
+  "Bounded projection of an advisory from one canonical report.",
+  {
+    reportId: canonicalUuidV4Field("Canonical source report UUIDv4."),
+    reportType: stringField("Canonical source report identity.", {
+      enum: [...MCP_ADMIN_FEEDBACK_REPORT_TYPES],
+    }),
+    windowStart: canonicalDateTimeField("Canonical report window start."),
+    windowEnd: canonicalDateTimeField("Canonical report window end."),
+    advisory: canonicalAdvisoryField,
+  },
+);
+
+const canonicalFreshnessProjectionField = feedbackClosedObjectField(
+  "Freshness derived from one canonical processor checkpoint.",
+  {
+    checkpoint: canonicalProcessorCheckpointField,
+    freshness: stringField("Closed derived freshness state.", {
+      enum: ["fresh", "stale"],
+    }),
+    lagSeconds: canonicalCountField(
+      "Whole seconds from checkpoint completion to `checkedAt`.",
+    ),
+  },
+);
+
+const feedbackStructuredEntryCommonFilterFields = (): Record<
+  string,
+  McpFieldShape
+> => ({
+  window: stringField("Closed server-owned entry lookback.", {
+    required: true,
+    enum: [...MCP_ADMIN_FEEDBACK_ENTRY_WINDOWS],
+  }),
+  limit: integerField("Maximum structured entries returned.", {
+    required: false,
+    minimum: 1,
+    maximum: MCP_ADMIN_FEEDBACK_MAX_PAGE_SIZE,
+  }),
+  cursor: stringField("Opaque server-issued continuation cursor.", {
+    required: false,
+    minLength: 1,
+    maxLength: MCP_ADMIN_FEEDBACK_MAX_CURSOR_LENGTH,
+    pattern: "^[A-Za-z0-9_-]+$",
+  }),
+});
+
+const feedbackStructuredEntryFiltersField = discriminatedUnionField(
+  "Exact bounded structured-entry filters. The selected `packetType` variant is closed so bug-only and review-only filters cannot be combined.",
+  "packetType",
+  [
+    feedbackClosedObjectField(
+      "Filters for canonical bug packets only.",
+      {
+        packetType: canonicalLiteralStringField(
+          "Canonical bug-packet identity.",
+          MCP_ADMIN_FEEDBACK_PACKET_TYPES[0],
+        ),
+        ...feedbackStructuredEntryCommonFilterFields(),
+        surfaceId: stringField(
+          "Optional exact allowlisted bug-surface identifier.",
+          {
+            required: false,
+            enum: [...FEEDBACK_SCHEMA_SURFACE_IDS],
+          },
+        ),
+        buildId: stringField(
+          "Optional exact server-owned bug build identifier.",
+          {
+            required: false,
+            maxLength: 128,
+            pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$",
+          },
+        ),
+        severity: integerField("Optional exact bug severity.", {
+          required: false,
+          minimum: 1,
+          maximum: 5,
+        }),
+      },
+      { additionalProperties: false },
+    ),
+    feedbackClosedObjectField(
+      "Filters for canonical review packets only.",
+      {
+        packetType: canonicalLiteralStringField(
+          "Canonical review-packet identity.",
+          MCP_ADMIN_FEEDBACK_PACKET_TYPES[1],
+        ),
+        ...feedbackStructuredEntryCommonFilterFields(),
+        satisfaction: integerField("Optional exact satisfaction score.", {
+          required: false,
+          minimum: 1,
+          maximum: 5,
+        }),
+      },
+      { additionalProperties: false },
+    ),
+  ],
+  { required: true },
+);
+
+function deepFreeze<T>(value: T): T {
+  if (value === null || (typeof value !== "object" && typeof value !== "function")) {
+    return value;
+  }
+
+  for (const propertyValue of Object.values(value as Record<string, unknown>)) {
+    deepFreeze(propertyValue);
+  }
+
+  return Object.freeze(value);
+}
+
+const feedbackDescriptorMetadata = {
+  domain: "feedback",
+  rolloutFlag: MCP_ADMIN_FEEDBACK_FLAG_ID,
+  requiredCapability: MCP_ADMIN_FEEDBACK_READ_CAPABILITY,
+  oauthScopes: [...MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES],
+  privacy: MCP_ADMIN_FEEDBACK_PRIVACY_METADATA,
+  access: feedbackReadAccess,
+  availability: "near-future",
+} as const satisfies Partial<McpActionDescriptor>;
+
+export const MCP_ADMIN_FEEDBACK_ACTIONS: readonly McpActionDescriptor[] =
+  deepFreeze<McpActionDescriptor[]>([
+    {
+      name: "getFeedbackBugHealth",
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.actionGetFeedbackBugHealth,
+      ),
+      ...feedbackDescriptorMetadata,
+      schemaSource: feedbackSchemaSource("FeedbackHourlyBugReportSchema"),
+      execution: {
+        method: "GET",
+        path: "/api/admin/feedback/bug-health",
+        source: "near-future-route",
+        notes: [
+          "Reads immutable hourly materialisations only; it does not scan packets or Blob Storage on request.",
+          "Returns identifier-free structured distributions, fixed advisories, and deterministic recommendation identifiers only.",
+        ],
+      },
+      input: {
+        window: stringField("Closed server-owned bug-health report window.", {
+          required: true,
+          enum: [...MCP_ADMIN_FEEDBACK_BUG_HEALTH_WINDOWS],
+        }),
+      },
+      output: {
+        metadata: feedbackCanonicalReportListMetadataField(
+          MCP_ADMIN_FEEDBACK_BUG_HEALTH_WINDOWS,
+          168,
+        ),
+        reports: arrayOfField(
+          "At most 168 canonical immutable hourly bug-health reports.",
+          "FeedbackHourlyBugReport",
+          canonicalHourlyBugReportField,
+          { maxItems: 168 },
+        ),
+      },
+    },
+    {
+      name: "getFeedbackSatisfaction",
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.actionGetFeedbackSatisfaction,
+      ),
+      ...feedbackDescriptorMetadata,
+      schemaSource: feedbackSchemaSource(
+        "FeedbackDailySatisfactionReportSchema",
+      ),
+      execution: {
+        method: "GET",
+        path: "/api/admin/feedback/satisfaction",
+        source: "near-future-route",
+        notes: [
+          "Reads immutable daily materialisations only; it does not calculate from raw review packets on request.",
+          "Returns star statistics and closed derived classifications without narrative or reporter correlation.",
+        ],
+      },
+      input: {
+        window: stringField("Closed server-owned satisfaction report window.", {
+          required: true,
+          enum: [...MCP_ADMIN_FEEDBACK_SATISFACTION_WINDOWS],
+        }),
+      },
+      output: {
+        metadata: feedbackCanonicalReportListMetadataField(
+          MCP_ADMIN_FEEDBACK_SATISFACTION_WINDOWS,
+          90,
+        ),
+        reports: arrayOfField(
+          "At most 90 canonical immutable daily satisfaction reports.",
+          "FeedbackDailySatisfactionReport",
+          canonicalDailySatisfactionReportField,
+          { maxItems: 90 },
+        ),
+      },
+    },
+    {
+      name: "listFeedbackAlerts",
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.actionListFeedbackAlerts,
+      ),
+      ...feedbackDescriptorMetadata,
+      schemaSource: feedbackSchemaSource(
+        "FeedbackHourlyBugReportSchema",
+        "FeedbackDailySatisfactionReportSchema",
+      ),
+      execution: {
+        method: "GET",
+        path: "/api/admin/feedback/alerts",
+        source: "near-future-route",
+        notes: [
+          "Reads deterministic advisories only; no generated summaries, operator notes, or mutation controls are exposed.",
+          "Pagination is server-cursor based and capped at 100 advisories per call.",
+        ],
+      },
+      input: {
+        window: stringField("Closed server-owned advisory lookback.", {
+          required: true,
+          enum: [...MCP_ADMIN_FEEDBACK_ALERT_WINDOWS],
+        }),
+        reportType: stringField("Optional canonical source-report identity.", {
+          required: false,
+          enum: [...MCP_ADMIN_FEEDBACK_REPORT_TYPES],
+        }),
+        limit: integerField("Maximum advisories returned.", {
+          required: false,
+          minimum: 1,
+          maximum: MCP_ADMIN_FEEDBACK_MAX_PAGE_SIZE,
+        }),
+        cursor: stringField("Opaque server-issued continuation cursor.", {
+          required: false,
+          minLength: 1,
+          maxLength: MCP_ADMIN_FEEDBACK_MAX_CURSOR_LENGTH,
+          pattern: "^[A-Za-z0-9_-]+$",
+        }),
+      },
+      output: {
+        metadata: feedbackPageMetadataField(MCP_ADMIN_FEEDBACK_ALERT_WINDOWS),
+        items: arrayOfField(
+          "Canonical deterministic advisories with bounded source-report metadata.",
+          "FeedbackAdvisoryProjection",
+          canonicalAlertProjectionField,
+          { maxItems: MCP_ADMIN_FEEDBACK_MAX_PAGE_SIZE },
+        ),
+      },
+    },
+    {
+      name: "getFeedbackFreshness",
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.actionGetFeedbackFreshness,
+      ),
+      ...feedbackDescriptorMetadata,
+      schemaSource: feedbackSchemaSource(
+        "FeedbackProcessorCheckpointSchema",
+      ),
+      execution: {
+        method: "GET",
+        path: "/api/admin/feedback/freshness",
+        source: "near-future-route",
+        notes: [
+          "Returns freshness derived from canonical processor checkpoints only; no logs, exception text, or storage references are exposed.",
+        ],
+      },
+      input: {
+        processor: stringField("Optional canonical processor filter.", {
+          required: false,
+          enum: [...MCP_ADMIN_FEEDBACK_PROCESSORS],
+        }),
+      },
+      output: {
+        checkedAt: canonicalDateTimeField(
+          "UTC time at which processor freshness was read.",
+        ),
+        processors: arrayOfField(
+          "Freshness derived from canonical feedback processor checkpoints.",
+          "FeedbackProcessorFreshness",
+          canonicalFreshnessProjectionField,
+          { maxItems: MCP_ADMIN_FEEDBACK_PROCESSORS.length },
+        ),
+      },
+    },
+    {
+      name: "listFeedbackStructuredEntries",
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.actionListFeedbackStructuredEntries,
+      ),
+      ...feedbackDescriptorMetadata,
+      schemaSource: feedbackSchemaSource(
+        "FeedbackBugPacketSchema",
+        "FeedbackReviewPacketSchema",
+      ),
+      execution: {
+        method: "GET",
+        path: "/api/admin/feedback/entries",
+        source: "near-future-route",
+        notes: [
+          "Returns schema-validated identifier-free structured entries only; narrative, reporter control state, pixels, URLs, and direct storage references are never available.",
+          "The runtime must validate `filters` against exactly one closed `packetType` variant, reject cross-packet or unknown fields, and only then map that variant to route query parameters.",
+          "Only closed window selectors, allowlisted packet-specific filters, opaque cursors, and a maximum page size of 100 are accepted; unrestricted scans are not represented.",
+        ],
+      },
+      input: {
+        filters: feedbackStructuredEntryFiltersField,
+      },
+      output: {
+        metadata: feedbackPageMetadataField(MCP_ADMIN_FEEDBACK_ENTRY_WINDOWS),
+        items: arrayOfField(
+          "Reporter-identifier-free structured feedback entries.",
+          "FeedbackPacket",
+          canonicalFeedbackPacketField,
+          { maxItems: MCP_ADMIN_FEEDBACK_MAX_PAGE_SIZE },
+        ),
+      },
+    },
+  ]);
+
 export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   {
     name: "listFeatureFlags",
@@ -2545,6 +3787,7 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
       ),
     },
   },
+  ...MCP_ADMIN_FEEDBACK_ACTIONS,
 ] as const;
 
 export function listMcpActionSummaries(): McpActionSummary[] {
@@ -2555,6 +3798,9 @@ export function listMcpActionSummaries(): McpActionSummary[] {
     descriptionDefault: action.descriptionDefault,
     domain: action.domain,
     rolloutFlag: action.rolloutFlag,
+    ...(action.oauthScopes === undefined ? {} : { oauthScopes: action.oauthScopes }),
+    ...(action.privacy === undefined ? {} : { privacy: action.privacy }),
+    ...(action.schemaSource === undefined ? {} : { schemaSource: action.schemaSource }),
     availability: action.availability,
     execution: action.execution,
     requiredCapability: action.requiredCapability,
@@ -2669,6 +3915,9 @@ export function buildMcpSchemaResponse(): McpSchemaResponse {
       {
         domain: action.domain,
         rolloutFlag: action.rolloutFlag,
+        ...(action.oauthScopes === undefined ? {} : { oauthScopes: action.oauthScopes }),
+        ...(action.privacy === undefined ? {} : { privacy: action.privacy }),
+        ...(action.schemaSource === undefined ? {} : { schemaSource: action.schemaSource }),
         availability: action.availability,
         execution: action.execution,
         input: action.input,
@@ -2729,6 +3978,13 @@ function buildMcpActionFamilies(): McpContextResponse["actionFamilies"] {
       domain: "economy",
       rolloutFlag: MCP_ADMIN_ECONOMY_HISTORY_FLAG_ID,
       actions: getActionsByDomain("economy"),
+    },
+    {
+      domain: "feedback",
+      rolloutFlag: MCP_ADMIN_FEEDBACK_FLAG_ID,
+      requiredCapability: MCP_ADMIN_FEEDBACK_READ_CAPABILITY,
+      oauthScopes: [...MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES],
+      actions: getActionsByDomain("feedback"),
     },
     {
       domain: "assetCatalog",
