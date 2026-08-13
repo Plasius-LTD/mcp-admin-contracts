@@ -118,10 +118,13 @@ contracts:
 Every feedback descriptor carries the canonical default-off rollout flag
 `feedback.mcp.enabled`, required capability `admin.feedback.read`, complete
 action-level OAuth scopes `mcp:access` plus `admin.feedback.read`, and a
-machine-readable privacy boundary. The consuming admin/MCP runtime owns
-evaluation of those controls and must fail closed. When the flag or capability
-is unavailable, the consumer-visible fallback is that the feedback actions are
-omitted or rejected; this package does not evaluate access.
+machine-readable privacy boundary. The same controls are repeated in the
+descriptor's unified read-only `access` metadata so a consumer cannot silently
+drop one requirement when building hosted tools. The consuming admin/MCP
+runtime owns evaluation of those controls and must fail closed. When the flag,
+scope, or capability is unavailable, the consumer-visible fallback is that the
+feedback actions are omitted or rejected; this package does not evaluate
+access.
 
 The global AI-plugin manifest deliberately retains its existing
 `openid email profile mcp:access` base scopes. The feedback scopes remain
@@ -161,9 +164,10 @@ pack, and audit gates. Source, file, Git, or unpublished semver dependency pins
 are prohibited.
 
 The contracts explicitly exclude account, reporter, network, session,
-user-agent, locale, client-time, referrer, coordinate, and adapter identifiers;
-they also exclude narrative, binary images, Blob references, raw URLs,
-unrestricted scans, and mutations.
+user-agent, locale, client-time, referrer, coordinate, dimension, and adapter
+identifiers; credentials and secrets; financial and government identifiers;
+filenames and raw warnings; narrative, binary images, Blob references, raw
+URLs, unrestricted scans, and mutations.
 Narrative-derived data is limited to closed classifications; it cannot include
 summaries, quotations, embeddings, hashes, matched values, or model traces.
 Renderer diagnostics are bounded structured facts only and never

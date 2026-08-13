@@ -8,8 +8,9 @@
     reporter-identifier-free structured feedback entries.
   - Added stable `feedback.mcp.enabled` rollout and `admin.feedback.read`
     capability metadata, complete action-level `mcp:access` plus
-    `admin.feedback.read` OAuth scope metadata, en-GB descriptions, and
-    machine-readable privacy exclusions and bounds.
+    `admin.feedback.read` OAuth scope metadata, unified fail-closed access
+    requirements, en-GB descriptions, and machine-readable privacy exclusions
+    and bounds.
   - Added canonical packet, aggregate, advisory, diagnostics, and
     processor-checkpoint projections with pinned parity coverage.
 
@@ -28,7 +29,9 @@
     `additionalProperties: false` so undeclared fields cannot cross the
     Admin/MCP contract boundary.
   - Made account, network, session, user-agent, locale, client-time, referrer,
-    coordinate, and adapter-identity exclusions machine-readable.
+    credential, financial, government, filename, dimension, warning,
+    coordinate, adapter-identity, and model-artifact exclusions
+    machine-readable.
   - Kept narrative, reporter correlation, binary images, storage references,
     raw URLs, unrestricted scans, and mutations outside the public contract.
   - Raised transitive `brace-expansion`, `nanoid`, and `postcss` override

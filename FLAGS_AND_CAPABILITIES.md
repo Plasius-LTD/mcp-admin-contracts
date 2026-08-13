@@ -54,6 +54,9 @@ Current feedback contract:
 - `admin.feedback.read` is carried as the required capability. Complete
   action-level OAuth metadata contains `mcp:access` and
   `admin.feedback.read`.
+- Each feedback action's unified read-only access metadata repeats the complete
+  scope, capability, and rollout tuple so consuming runtimes can enforce it as
+  one fail-closed requirement set.
 - The global AI-plugin manifest keeps its existing `openid email profile mcp:access`
   scopes until the site OAuth issuer and protected-resource metadata are
   coordinated; feedback scope publication is not performed unconditionally.

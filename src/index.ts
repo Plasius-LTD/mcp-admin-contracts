@@ -93,10 +93,22 @@ export const MCP_ADMIN_FEEDBACK_PRIVACY_EXCLUSIONS = [
   "locales",
   "client-timestamps",
   "referrers",
+  "credentials-and-secrets",
+  "financial-identifiers",
+  "government-identifiers",
   "narrative",
+  "generated-summaries",
+  "quotations",
+  "embeddings",
+  "content-hashes",
+  "matched-values",
+  "model-traces",
   "binary-images",
+  "filenames",
   "exact-coordinates",
+  "exact-dimensions",
   "adapter-fingerprints",
+  "raw-warnings",
   "blob-references",
   "raw-urls",
   "unrestricted-scans",
@@ -1037,6 +1049,14 @@ export const MCP_ADMIN_FEEDBACK_PRIVACY_METADATA: McpFeedbackPrivacyMetadata =
     ]),
   });
 
+const feedbackReadAccess = {
+  oauthScopes: [...MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES],
+  capabilities: [MCP_ADMIN_FEEDBACK_READ_CAPABILITY],
+  rolloutFlags: [MCP_ADMIN_FEEDBACK_FLAG_ID],
+  mode: "read-only",
+  identityResolution: "not-available",
+} as const satisfies McpActionAccessRequirements;
+
 const feedbackPageMetadataField = (
   allowedWindows: readonly string[],
 ): McpFieldShape =>
@@ -1926,6 +1946,7 @@ const feedbackDescriptorMetadata = {
   requiredCapability: MCP_ADMIN_FEEDBACK_READ_CAPABILITY,
   oauthScopes: [...MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES],
   privacy: MCP_ADMIN_FEEDBACK_PRIVACY_METADATA,
+  access: feedbackReadAccess,
   availability: "near-future",
 } as const satisfies Partial<McpActionDescriptor>;
 

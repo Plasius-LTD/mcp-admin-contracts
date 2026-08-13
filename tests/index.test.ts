@@ -713,6 +713,13 @@ describe("MCP admin contracts", () => {
       expect(action.oauthScopes).toEqual(
         MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES,
       );
+      expect(action.access).toEqual({
+        oauthScopes: MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES,
+        capabilities: [MCP_ADMIN_FEEDBACK_READ_CAPABILITY],
+        rolloutFlags: [MCP_ADMIN_FEEDBACK_FLAG_ID],
+        mode: "read-only",
+        identityResolution: "not-available",
+      });
       expect(action.schemaSource?.packageName).toBe(
         MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE,
       );
@@ -734,6 +741,13 @@ describe("MCP admin contracts", () => {
     expect(feedbackSummary).toMatchObject({
       requiredCapability: MCP_ADMIN_FEEDBACK_READ_CAPABILITY,
       oauthScopes: MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES,
+      access: {
+        oauthScopes: MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES,
+        capabilities: [MCP_ADMIN_FEEDBACK_READ_CAPABILITY],
+        rolloutFlags: [MCP_ADMIN_FEEDBACK_FLAG_ID],
+        mode: "read-only",
+        identityResolution: "not-available",
+      },
       privacy: {
         readOnly: true,
         bounded: true,
@@ -1291,10 +1305,22 @@ describe("MCP admin contracts", () => {
       "locales",
       "client-timestamps",
       "referrers",
+      "credentials-and-secrets",
+      "financial-identifiers",
+      "government-identifiers",
       "narrative",
+      "generated-summaries",
+      "quotations",
+      "embeddings",
+      "content-hashes",
+      "matched-values",
+      "model-traces",
       "binary-images",
+      "filenames",
       "exact-coordinates",
+      "exact-dimensions",
       "adapter-fingerprints",
+      "raw-warnings",
       "blob-references",
       "raw-urls",
       "unrestricted-scans",

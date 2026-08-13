@@ -50,11 +50,14 @@ Every feedback descriptor carries:
 - parent rollout flag `feedback.mcp.enabled`
 - required capability `admin.feedback.read`
 - complete action-level OAuth scopes `mcp:access` and `admin.feedback.read`
+- unified read-only access metadata repeating the complete scope, capability,
+  and rollout requirements for fail-closed consumers
 - a `public-safe-structured-only` privacy classification
 - explicit exclusion of account, reporter, network, session, user-agent,
-  locale, client-time, referrer, coordinate, and adapter identifiers, plus
-  narrative, binary images, Blob references, raw URLs, unrestricted scans,
-  and mutations
+  locale, client-time, referrer, coordinate, dimension, and adapter
+  identifiers; credentials and secrets; financial and government identifiers;
+  filenames and raw warnings; narrative, binary images, Blob references, raw
+  URLs, unrestricted scans, and mutations
 
 Narrative-derived outputs are limited to closed sentiment, intent, and
 confidence buckets. Summaries, quotations, embeddings, hashes, matched values,
