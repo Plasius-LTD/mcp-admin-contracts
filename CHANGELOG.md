@@ -3,6 +3,20 @@
 ## Unreleased
 
 - **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.5.0] - 2026-08-13
+
+- **Added**
   - Added a privacy-safe, read-only `feedback` domain for bounded bug health,
     satisfaction, deterministic alerts, processor freshness, and
     reporter-identifier-free structured feedback entries.
@@ -201,3 +215,4 @@
 [0.3.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.3.0
 [0.3.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.3.1
 [0.4.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.4.0
+[0.5.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.5.0
