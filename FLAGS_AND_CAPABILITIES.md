@@ -64,6 +64,26 @@ Current feedback contract:
   authentication, fail-closed rate limits, and audit. If either control is
   unavailable, feedback actions must be omitted or rejected.
 
+Current canonical model-resolution contract:
+
+- `asset.pipeline.unified-ai-assets.enabled` is the required parent flag for
+  all eight canonical snake_case model tools.
+- `asset.pipeline.external-model-harvest.enabled` and
+  `asset.pipeline.ai-model-generation.enabled` are conditional kill switches;
+  the host evaluates them only when the corresponding provider or generator
+  fallback is attempted.
+- The package carries canonical `asset.catalog.request`,
+  `asset.catalog.confirm`, `asset.catalog.review`, `asset.source.manage`, and
+  `asset.pipeline.mcp.manage` capability identifiers as contract metadata.
+- Its model-family OAuth registry contains `mcp:access` and all five asset
+  capability scopes for issuer and protected-resource discovery; individual
+  tool descriptors retain their narrower canonical scope requirements.
+- Tool-specific OAuth scopes, annotations, and security schemes are consumed
+  directly from `@plasius/asset-mcp`; this package does not broaden them.
+- The hosted MCP service is the owning evaluator. Disabled or unauthorized
+  tools and resources must be omitted or rejected fail closed; this package
+  performs no runtime evaluation.
+
 ## 5. Testing Expectations
 
 - Tests for new or changed exported flag/capability identifiers must verify the

@@ -62,8 +62,68 @@ The exported registry currently covers:
   spend-trend descriptors
 - governed asset catalog, source-intake, pipeline, and review descriptors for
   the hosted `plasius-ltd-site` MCP backend
+- canonical model-resolution discovery sourced from `@plasius/asset-mcp`,
+  including its authenticated `mcp://models/...` resource templates
 - owner-only Token finance descriptors for bounded wallet/activity reads and
   dual-approved credit or compensating-reversal workflows
+
+### Canonical model resolution
+
+The additive `modelTools` discovery family advertises the eight exact MCP
+tool names owned by `@plasius/asset-mcp 0.1.6`:
+
+- `list_model_search_rankers`
+- `search_model_catalog`
+- `resolve_model_request`
+- `get_model_resolution`
+- `confirm_model_candidate`
+- `retry_model_resolution`
+- `cancel_model_resolution`
+- `rebuild_model_catalog_index`
+
+These are JSON-RPC 2.0 tools executed with `tools/call` over `POST /api/mcp`.
+They are deliberately separate from the existing REST-backed `actions` array;
+all legacy descriptors and exports remain source-compatible. The schema
+response references the canonical input/output schema objects, annotations,
+OAuth security schemes, capabilities, review-result metadata, and rollout
+metadata directly from `@plasius/asset-mcp` rather than maintaining local
+copies. Each wrapper also carries bounded verification notes identifying the
+canonical result or follow-up tool used to confirm an operation.
+
+Every model tool requires the parent
+`asset.pipeline.unified-ai-assets.enabled` flag. Provider acquisition and the
+future generator additionally carry the conditional, fail-closed
+`asset.pipeline.external-model-harvest.enabled` and
+`asset.pipeline.ai-model-generation.enabled` flags only on the tools that may
+attempt those fallbacks. Installing this package does not evaluate any flag or
+make a hosted tool callable; the consuming runtime owns fail-closed rollout,
+OAuth, capability, ownership, and audit enforcement.
+
+Tool scopes and capabilities are preserved exactly, including distinct
+`asset.catalog.request`, `asset.catalog.confirm`, and operator-only
+`asset.pipeline.mcp.manage` requirements. The wider model capability registry
+also carries `asset.catalog.review` and `asset.source.manage` for coordinated
+host discovery. `MCP_ADMIN_MODEL_OAUTH_SCOPES` is the complete issuer and
+protected-resource scope registry (`mcp:access` plus all five asset capability
+scopes); it does not broaden any individual tool descriptor. Named
+`MCP_ASSET_*_CAPABILITY` exports, including
+`MCP_ASSET_CATALOG_CONFIRM_CAPABILITY`, use the canonical package constants so
+hosts do not need to hardcode those identifiers. Authenticated
+model-resolution records, processing manifests,
+1024-pixel originals, and promoted manifests are advertised through the five
+canonical `mcp://models/...` resource templates. Inline 512-pixel four-view
+image results remain part of the canonical tool result contract, not this
+admin wrapper.
+
+Shared verification-note arrays and the exported context schema are deeply
+frozen. A consumer therefore cannot mutate one discovery or schema result and
+silently change later calls in the same process.
+
+Package-owned en-GB keys provide stable descriptions for every canonical tool.
+When discovery is built, description drift between those translations and the
+pinned canonical registry fails closed. `@plasius/asset-contracts 0.3.1`
+supplies the underlying model-resolution contract version; no model schema is
+redeclared here.
 
 Token finance descriptors require the host to enforce the parent
 `economy.tokens.enabled` flag and the package-published

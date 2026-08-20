@@ -700,7 +700,7 @@ describe("MCP admin contracts", () => {
   });
 
   it("publishes a read-only, bounded and immutable feedback registry", () => {
-    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-11.v6");
+    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-20.v7");
     expect(Object.isFrozen(MCP_ADMIN_FEEDBACK_ACTIONS)).toBe(true);
     expect(Object.isFrozen(MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES)).toBe(
       true,

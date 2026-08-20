@@ -3,16 +3,29 @@
 ## Unreleased
 
 - **Added**
-  - (placeholder)
+  - Added public-safe discovery and schema metadata for all eight canonical
+    snake_case model-resolution tools, their authenticated `mcp://models/...`
+    resources, JSON-RPC `tools/call` execution, en-GB descriptions, and model
+    contract context with bounded verification notes.
 
 - **Changed**
-  - (placeholder)
+  - Advanced the additive MCP Admin registry contract to `2026-08-20.v7` and
+    pinned `@plasius/asset-mcp 0.1.6` plus `@plasius/asset-contracts 0.3.1` as
+    the canonical model tool and schema sources.
 
 - **Fixed**
-  - (placeholder)
+  - Completed the model-family OAuth discovery registry with the retained
+    review and source-management scopes and added the canonical top-level
+    catalog-confirm capability export.
+  - Deep-froze shared model verification notes and the context schema so one
+    consumer cannot mutate later discovery responses.
 
 - **Security**
-  - (placeholder)
+  - Preserved exact canonical OAuth scopes, capabilities, annotations, parent
+    and conditional rollout flags without adding runtime access or flag
+    evaluation to the public contract package.
+  - Kept per-tool authorization metadata unchanged while ensuring issuer and
+    protected-resource consumers can advertise every model capability scope.
 
 ## [0.5.0] - 2026-08-13
 

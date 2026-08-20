@@ -19,6 +19,27 @@ import {
   FeedbackProcessorCheckpointSchema,
   FeedbackReviewPacketSchema,
 } from "@plasius/schema";
+import { MODEL_RESOLUTION_CONTRACT_VERSION } from "@plasius/asset-contracts";
+import {
+  ASSET_MCP_PACKAGE,
+  MODEL_MCP_CATALOG_CONFIRM_CAPABILITY,
+  MODEL_MCP_CATALOG_REQUEST_CAPABILITY,
+  MODEL_MCP_CATALOG_REVIEW_CAPABILITY,
+  MODEL_MCP_CONTRACT_VERSION,
+  MODEL_MCP_EXTERNAL_HARVEST_FEATURE_FLAG_ID,
+  MODEL_MCP_GENERATION_FEATURE_FLAG_ID,
+  MODEL_MCP_PIPELINE_MANAGE_CAPABILITY,
+  MODEL_MCP_SOURCE_MANAGE_CAPABILITY,
+  MODEL_MCP_TOOL_NAMES,
+  MODEL_MCP_UNIFIED_FEATURE_FLAG_ID,
+  listModelMcpResourceTemplates,
+  listModelMcpToolDefinitions,
+} from "@plasius/asset-mcp";
+import type {
+  ModelMcpResourceTemplate,
+  ModelMcpToolDefinition,
+  ModelMcpToolName,
+} from "@plasius/asset-mcp";
 import {
   getMcpAdminContractDefaultTranslation,
   mcpAdminContractDescriptionKeys,
@@ -35,7 +56,7 @@ export {
 };
 export type { McpAdminContractDescriptionKey };
 
-export const MCP_ADMIN_CONTRACT_VERSION = "2026-08-11.v6";
+export const MCP_ADMIN_CONTRACT_VERSION = "2026-08-20.v7";
 export const MCP_ADMIN_REGISTRY_SOURCE = "@plasius/mcp-admin-contracts";
 
 export const MCP_ADMIN_FOUNDATION_FLAG_ID = "mcp.admin.foundation.enabled";
@@ -67,11 +88,38 @@ export const MCP_ASSET_PIPELINE_FLAG_ID =
   "asset.pipeline.unified-ai-assets.enabled";
 export const MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID =
   "asset.pipeline.external-model-harvest.enabled";
-export const MCP_ASSET_CATALOG_REQUEST_CAPABILITY = "asset.catalog.request";
+export const MCP_ASSET_CATALOG_REQUEST_CAPABILITY =
+  MODEL_MCP_CATALOG_REQUEST_CAPABILITY;
+export const MCP_ASSET_CATALOG_CONFIRM_CAPABILITY =
+  MODEL_MCP_CATALOG_CONFIRM_CAPABILITY;
 export const MCP_ASSET_PIPELINE_MANAGE_CAPABILITY =
-  "asset.pipeline.mcp.manage";
-export const MCP_ASSET_SOURCE_MANAGE_CAPABILITY = "asset.source.manage";
-export const MCP_ASSET_CATALOG_REVIEW_CAPABILITY = "asset.catalog.review";
+  MODEL_MCP_PIPELINE_MANAGE_CAPABILITY;
+export const MCP_ASSET_SOURCE_MANAGE_CAPABILITY =
+  MODEL_MCP_SOURCE_MANAGE_CAPABILITY;
+export const MCP_ASSET_CATALOG_REVIEW_CAPABILITY =
+  MODEL_MCP_CATALOG_REVIEW_CAPABILITY;
+export const MCP_ADMIN_MODEL_TOOL_CONTRACT_VERSION = MODEL_MCP_CONTRACT_VERSION;
+export const MCP_ADMIN_MODEL_REGISTRY_SOURCE = ASSET_MCP_PACKAGE;
+export const MCP_ADMIN_MODEL_RESOLUTION_CONTRACT_VERSION =
+  MODEL_RESOLUTION_CONTRACT_VERSION;
+export const MCP_ADMIN_MODEL_CAPABILITIES = Object.freeze({
+  catalogRequest: MODEL_MCP_CATALOG_REQUEST_CAPABILITY,
+  catalogConfirm: MODEL_MCP_CATALOG_CONFIRM_CAPABILITY,
+  catalogReview: MODEL_MCP_CATALOG_REVIEW_CAPABILITY,
+  sourceManage: MODEL_MCP_SOURCE_MANAGE_CAPABILITY,
+  pipelineManage: MODEL_MCP_PIPELINE_MANAGE_CAPABILITY,
+});
+
+export const MCP_ADMIN_MODEL_OAUTH_SCOPES: readonly string[] = Object.freeze([
+  MCP_ACCESS_SCOPE,
+  MODEL_MCP_CATALOG_REQUEST_CAPABILITY,
+  MODEL_MCP_CATALOG_CONFIRM_CAPABILITY,
+  MODEL_MCP_CATALOG_REVIEW_CAPABILITY,
+  MODEL_MCP_SOURCE_MANAGE_CAPABILITY,
+  MODEL_MCP_PIPELINE_MANAGE_CAPABILITY,
+]);
+
+const canonicalModelToolDefinitions = listModelMcpToolDefinitions();
 export const MCP_ADMIN_FEEDBACK_FLAG_ID = "feedback.mcp.enabled";
 export const MCP_ADMIN_FEEDBACK_READ_CAPABILITY = "admin.feedback.read";
 export const MCP_ADMIN_BASE_OAUTH_SCOPE = MCP_ACCESS_SCOPE;
@@ -317,10 +365,58 @@ export interface McpActionSummary {
   access?: McpActionAccessRequirements;
 }
 
+export interface McpModelToolExecution {
+  protocol: "json-rpc-2.0";
+  method: "POST";
+  path: "/api/mcp";
+  rpcMethod: "tools/call";
+  toolName: ModelMcpToolName;
+}
+
+export type McpModelToolSummary = Omit<
+  ModelMcpToolDefinition,
+  "inputSchema" | "outputSchema"
+> & {
+  descriptionKey: McpAdminContractDescriptionKey;
+  descriptionDefault: string;
+  availability: "near-future";
+  execution: McpModelToolExecution;
+  verificationNotes: readonly string[];
+};
+
+export type McpModelToolSchemaDescriptor = ModelMcpToolDefinition & {
+  descriptionKey: McpAdminContractDescriptionKey;
+  descriptionDefault: string;
+  availability: "near-future";
+  execution: McpModelToolExecution;
+  verificationNotes: readonly string[];
+};
+
+export interface McpModelResolutionContext {
+  toolContractVersion: typeof MODEL_MCP_CONTRACT_VERSION;
+  sourceOfTruth: typeof ASSET_MCP_PACKAGE;
+  resolutionContractVersion: typeof MODEL_RESOLUTION_CONTRACT_VERSION;
+  endpoint: "/api/mcp";
+  protocol: "json-rpc-2.0";
+  rpcMethod: "tools/call";
+  requiredFeatureFlag: typeof MODEL_MCP_UNIFIED_FEATURE_FLAG_ID;
+  conditionalFeatureFlags: readonly [
+    typeof MODEL_MCP_EXTERNAL_HARVEST_FEATURE_FLAG_ID,
+    typeof MODEL_MCP_GENERATION_FEATURE_FLAG_ID,
+  ];
+  tools: readonly ModelMcpToolName[];
+  resourceTemplates: readonly string[];
+}
+
 export interface McpDiscoveryResponse {
   contractVersion: string;
   sourceOfTruth: string;
   actions: McpActionSummary[];
+  /** Additive canonical JSON-RPC model tools; legacy REST actions stay separate. */
+  modelTools?: McpModelToolSummary[];
+  /** Authenticated `mcp://models/...` templates owned by `@plasius/asset-mcp`. */
+  modelResources?: readonly ModelMcpResourceTemplate[];
+  modelSourceOfTruth?: typeof ASSET_MCP_PACKAGE;
 }
 
 export interface McpAuthenticatedUserContext {
@@ -370,6 +466,8 @@ export interface McpContextResponse {
     singleResourceMutations: boolean;
     notes: string[];
   };
+  /** Additive canonical model-resolution family metadata. */
+  modelResolution?: McpModelResolutionContext;
 }
 
 export interface McpSchemaResponse {
@@ -395,6 +493,10 @@ export interface McpSchemaResponse {
   >;
   contextShape: Record<string, McpFieldShape>;
   extensionRules: McpContextResponse["extensionRules"];
+  /** Canonical schemas are referenced directly from `@plasius/asset-mcp`. */
+  modelTools?: Record<ModelMcpToolName, McpModelToolSchemaDescriptor>;
+  modelResources?: readonly ModelMcpResourceTemplate[];
+  modelSourceOfTruth?: typeof ASSET_MCP_PACKAGE;
 }
 
 export interface BuildMcpContextResponseOptions {
@@ -3790,6 +3892,128 @@ export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   ...MCP_ADMIN_FEEDBACK_ACTIONS,
 ] as const;
 
+const modelDescriptionKeys = {
+  list_model_search_rankers:
+    mcpAdminContractDescriptionKeys.actionListModelSearchRankers,
+  search_model_catalog:
+    mcpAdminContractDescriptionKeys.actionSearchModelCatalog,
+  resolve_model_request:
+    mcpAdminContractDescriptionKeys.actionResolveModelRequest,
+  get_model_resolution:
+    mcpAdminContractDescriptionKeys.actionGetModelResolution,
+  confirm_model_candidate:
+    mcpAdminContractDescriptionKeys.actionConfirmModelCandidate,
+  retry_model_resolution:
+    mcpAdminContractDescriptionKeys.actionRetryModelResolution,
+  cancel_model_resolution:
+    mcpAdminContractDescriptionKeys.actionCancelModelResolution,
+  rebuild_model_catalog_index:
+    mcpAdminContractDescriptionKeys.actionRebuildModelCatalogIndex,
+} as const satisfies Record<ModelMcpToolName, McpAdminContractDescriptionKey>;
+
+const modelVerificationNotes = deepFreeze({
+  list_model_search_rankers: [
+    "Validate the returned ranker list and no-substitution policy against the canonical output schema.",
+  ],
+  search_model_catalog: [
+    "Validate ranked catalog evidence and any four-view image pack against the canonical structured output schema.",
+  ],
+  resolve_model_request: [
+    "Use get_model_resolution with the returned resolution identifier to verify durable progress and candidate evidence.",
+  ],
+  get_model_resolution: [
+    "Validate the owned immutable revision, state, questions, and any four-view image pack against the canonical output schema.",
+  ],
+  confirm_model_candidate: [
+    "Use get_model_resolution to verify completion and the immutable final asset reference after confirmation.",
+  ],
+  retry_model_resolution: [
+    "Use get_model_resolution to verify the newly created immutable request revision and excluded candidates.",
+  ],
+  cancel_model_resolution: [
+    "Use get_model_resolution to verify that unfinished requester-owned work reached the cancelled state.",
+  ],
+  rebuild_model_catalog_index: [
+    "Validate the idempotent operation identifier and state against the canonical output schema and operator audit record.",
+  ],
+} as const satisfies Record<ModelMcpToolName, readonly string[]>);
+
+const modelToolExecution = (
+  toolName: ModelMcpToolName,
+): McpModelToolExecution => ({
+  protocol: "json-rpc-2.0",
+  method: "POST",
+  path: "/api/mcp",
+  rpcMethod: "tools/call",
+  toolName,
+});
+
+const modelToolTranslation = (
+  definition: ModelMcpToolDefinition,
+): ReturnType<typeof translatedDescription> => {
+  const translation = translatedDescription(modelDescriptionKeys[definition.name]);
+
+  if (translation.descriptionDefault !== definition.description) {
+    throw new TypeError("Canonical model tool description translation mismatch.");
+  }
+
+  return translation;
+};
+
+export function listMcpModelToolSummaries(): McpModelToolSummary[] {
+  return canonicalModelToolDefinitions.map((definition) => {
+    const { inputSchema: _inputSchema, outputSchema: _outputSchema, ...summary } =
+      definition;
+
+    return {
+      ...summary,
+      ...modelToolTranslation(definition),
+      availability: "near-future",
+      execution: modelToolExecution(definition.name),
+      verificationNotes: modelVerificationNotes[definition.name],
+    };
+  });
+}
+
+export function listMcpModelResourceTemplates(): readonly ModelMcpResourceTemplate[] {
+  return listModelMcpResourceTemplates();
+}
+
+const buildMcpModelToolSchemaDescriptors = (): Record<
+  ModelMcpToolName,
+  McpModelToolSchemaDescriptor
+> =>
+  Object.fromEntries(
+    canonicalModelToolDefinitions.map((definition) => [
+      definition.name,
+      {
+        ...definition,
+        ...modelToolTranslation(definition),
+        availability: "near-future",
+        execution: modelToolExecution(definition.name),
+        verificationNotes: modelVerificationNotes[definition.name],
+      },
+    ]),
+  ) as unknown as Record<ModelMcpToolName, McpModelToolSchemaDescriptor>;
+
+const buildMcpModelResolutionContext = (): McpModelResolutionContext => ({
+  toolContractVersion: MODEL_MCP_CONTRACT_VERSION,
+  sourceOfTruth: ASSET_MCP_PACKAGE,
+  resolutionContractVersion: MODEL_RESOLUTION_CONTRACT_VERSION,
+  endpoint: "/api/mcp",
+  protocol: "json-rpc-2.0",
+  rpcMethod: "tools/call",
+  requiredFeatureFlag: MODEL_MCP_UNIFIED_FEATURE_FLAG_ID,
+  conditionalFeatureFlags: [
+    MODEL_MCP_EXTERNAL_HARVEST_FEATURE_FLAG_ID,
+    MODEL_MCP_GENERATION_FEATURE_FLAG_ID,
+  ],
+  tools: [...MODEL_MCP_TOOL_NAMES],
+  resourceTemplates: listModelMcpResourceTemplates().map(
+    ({ uriTemplate }) => uriTemplate,
+  ),
+});
+
 export function listMcpActionSummaries(): McpActionSummary[] {
   return MCP_ADMIN_ACTIONS.map((action) => ({
     name: action.name,
@@ -3809,7 +4033,7 @@ export function listMcpActionSummaries(): McpActionSummary[] {
   }));
 }
 
-export const MCP_ADMIN_CONTEXT_SHAPE: Record<string, McpFieldShape> = {
+export const MCP_ADMIN_CONTEXT_SHAPE: Record<string, McpFieldShape> = deepFreeze({
   contractVersion: stringField("Versioned discovery contract identifier."),
   authenticatedUser: objectField("Authenticated admin session context.", {
     id: stringField("Authenticated user identifier."),
@@ -3835,6 +4059,44 @@ export const MCP_ADMIN_CONTEXT_SHAPE: Record<string, McpFieldShape> = {
     ),
   }),
   actionFamilies: arrayField("Approved action families grouped by rollout domain.", "McpActionFamily"),
+  modelResolution: objectField(
+    "Canonical model-resolution JSON-RPC discovery metadata.",
+    {
+      toolContractVersion: stringField(
+        "Contract version imported from @plasius/asset-mcp.",
+        { constValue: MODEL_MCP_CONTRACT_VERSION },
+      ),
+      sourceOfTruth: stringField("Package that owns the canonical tool registry.", {
+        constValue: ASSET_MCP_PACKAGE,
+      }),
+      resolutionContractVersion: stringField(
+        "Resolution contract version imported from @plasius/asset-contracts.",
+        { constValue: MODEL_RESOLUTION_CONTRACT_VERSION },
+      ),
+      endpoint: stringField("Hosted MCP JSON-RPC endpoint.", {
+        constValue: "/api/mcp",
+      }),
+      protocol: stringField("MCP transport protocol.", {
+        constValue: "json-rpc-2.0",
+      }),
+      rpcMethod: stringField("JSON-RPC method used to execute a named tool.", {
+        constValue: "tools/call",
+      }),
+      requiredFeatureFlag: stringField(
+        "Parent rollout flag required for every model-resolution tool.",
+        { constValue: MODEL_MCP_UNIFIED_FEATURE_FLAG_ID },
+      ),
+      conditionalFeatureFlags: arrayField(
+        "Provider and generator flags evaluated only when their fallback is attempted.",
+        "string",
+      ),
+      tools: arrayField("Canonical snake_case model-resolution tool names.", "string"),
+      resourceTemplates: arrayField(
+        "Authenticated canonical mcp://models resource templates.",
+        "string",
+      ),
+    },
+  ),
   extensionRules: objectField("Rules for extending the registry without changing the discovery shape.", {
     sourceOfTruth: stringField("Package that owns the approved MCP registry."),
     addOnlyWithinV1: booleanField("Whether v1 additions must be additive."),
@@ -3842,7 +4104,7 @@ export const MCP_ADMIN_CONTEXT_SHAPE: Record<string, McpFieldShape> = {
     singleResourceMutations: booleanField("Whether mutations must target one resource at a time."),
     notes: arrayField("Extension notes for future MCP tool families.", "string"),
   }),
-};
+});
 
 export const MCP_ADMIN_EXTENSION_RULES = {
   sourceOfTruth: MCP_ADMIN_REGISTRY_SOURCE,
@@ -3905,6 +4167,9 @@ export function buildMcpDiscoveryResponse(): McpDiscoveryResponse {
     contractVersion: MCP_ADMIN_CONTRACT_VERSION,
     sourceOfTruth: MCP_ADMIN_REGISTRY_SOURCE,
     actions: listMcpActionSummaries(),
+    modelTools: listMcpModelToolSummaries(),
+    modelResources: listMcpModelResourceTemplates(),
+    modelSourceOfTruth: ASSET_MCP_PACKAGE,
   };
 }
 
@@ -3936,6 +4201,9 @@ export function buildMcpSchemaResponse(): McpSchemaResponse {
     actions,
     contextShape: MCP_ADMIN_CONTEXT_SHAPE,
     extensionRules: MCP_ADMIN_EXTENSION_RULES,
+    modelTools: buildMcpModelToolSchemaDescriptors(),
+    modelResources: listMcpModelResourceTemplates(),
+    modelSourceOfTruth: ASSET_MCP_PACKAGE,
   };
 }
 
@@ -3949,6 +4217,7 @@ export function buildMcpContextResponse(
     rollout: options.rollout,
     actionFamilies: buildMcpActionFamilies(),
     extensionRules: MCP_ADMIN_EXTENSION_RULES,
+    modelResolution: buildMcpModelResolutionContext(),
   };
 }
 
