@@ -87,6 +87,22 @@ export const mcpAdminContractsEnGbTranslations = {
     "Rollback an asset runtime channel to a previous promoted manifest version.",
   "mcpAdminContracts.action.getAssetJobStatus.description":
     "Read governed asset job status, planned processing work, and evidence references.",
+  "mcpAdminContracts.action.listModelSearchRankers.description":
+    "List allowlisted, calibrated model-search rankers and their current readiness without selecting a substitute.",
+  "mcpAdminContracts.action.searchModelCatalog.description":
+    "Search promoted model catalog versions using hard constraints and one exact calibrated ranker selection.",
+  "mcpAdminContracts.action.resolveModelRequest.description":
+    "Search the catalog and idempotently create asynchronous provider or generator fallback work when needed.",
+  "mcpAdminContracts.action.getModelResolution.description":
+    "Read an owned immutable model-resolution revision, progress, questions, and review evidence.",
+  "mcpAdminContracts.action.confirmModelCandidate.description":
+    "Confirm one exact four-view candidate; low assurance additionally requires explicit semantic-risk acceptance.",
+  "mcpAdminContracts.action.retryModelResolution.description":
+    "Create the next immutable request revision from bounded refinement answers and candidate exclusions.",
+  "mcpAdminContracts.action.cancelModelResolution.description":
+    "Idempotently cancel unfinished work owned by the requester.",
+  "mcpAdminContracts.action.rebuildModelCatalogIndex.description":
+    "Run an operator-only idempotent full, backfill, or repair rebuild of the promoted model catalog index.",
   "mcpAdminContracts.action.getUserTokenWallet.description":
     "Read an account's server-resolved Token wallet summary without exposing provider or payment data.",
   "mcpAdminContracts.action.listUserTokenActivity.description":

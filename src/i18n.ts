@@ -78,6 +78,22 @@ export const mcpAdminContractDescriptionKeys = {
   actionRollbackAsset: "mcpAdminContracts.action.rollbackAsset.description",
   actionGetAssetJobStatus:
     "mcpAdminContracts.action.getAssetJobStatus.description",
+  actionListModelSearchRankers:
+    "mcpAdminContracts.action.listModelSearchRankers.description",
+  actionSearchModelCatalog:
+    "mcpAdminContracts.action.searchModelCatalog.description",
+  actionResolveModelRequest:
+    "mcpAdminContracts.action.resolveModelRequest.description",
+  actionGetModelResolution:
+    "mcpAdminContracts.action.getModelResolution.description",
+  actionConfirmModelCandidate:
+    "mcpAdminContracts.action.confirmModelCandidate.description",
+  actionRetryModelResolution:
+    "mcpAdminContracts.action.retryModelResolution.description",
+  actionCancelModelResolution:
+    "mcpAdminContracts.action.cancelModelResolution.description",
+  actionRebuildModelCatalogIndex:
+    "mcpAdminContracts.action.rebuildModelCatalogIndex.description",
   actionGetUserTokenWallet:
     "mcpAdminContracts.action.getUserTokenWallet.description",
   actionListUserTokenActivity:
