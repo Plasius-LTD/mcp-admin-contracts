@@ -3,6 +3,20 @@
 ## Unreleased
 
 - **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.5.1] - 2026-08-20
+
+- **Added**
   - Added public-safe discovery and schema metadata for all eight canonical
     snake_case model-resolution tools, their authenticated `mcp://models/...`
     resources, JSON-RPC `tools/call` execution, en-GB descriptions, and model
@@ -229,3 +243,4 @@
 [0.3.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.3.1
 [0.4.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.4.0
 [0.5.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.5.0
+[0.5.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.5.1
