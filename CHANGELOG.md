@@ -3,6 +3,20 @@
 ## Unreleased
 
 - **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.6.0] - 2026-08-26
+
+- **Added**
   - Added the read-only `getFeedbackGameReconstruction` descriptor for one
     canonical safe in-game reconstruction manifest backed by curated public
     assets and consented coarse renderer diagnostics.
@@ -255,3 +269,4 @@
 [0.4.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.4.0
 [0.5.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.5.0
 [0.5.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.5.1
+[0.6.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.0
