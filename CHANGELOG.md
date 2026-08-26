@@ -3,16 +3,27 @@
 ## Unreleased
 
 - **Added**
-  - (placeholder)
+  - Added the read-only `getFeedbackGameReconstruction` descriptor for one
+    canonical safe in-game reconstruction manifest backed by curated public
+    assets and consented coarse renderer diagnostics.
 
 - **Changed**
-  - (placeholder)
+  - Advanced the additive MCP Admin registry contract to `2026-08-26.v8` and
+    added the canonical `FeedbackGameReconstructionManifestSchema` source
+    identity plus an en-GB action description.
 
 - **Fixed**
   - (placeholder)
 
 - **Security**
-  - (placeholder)
+  - Restricted reconstruction reads to exact lowercase UUIDv4 point lookups
+    under the existing default-off `feedback.mcp.enabled`, `mcp:access`, and
+    `admin.feedback.read` controls, with no list, scan, query, or mutation
+    contract.
+  - Explicitly excluded client pixels and request telemetry in addition to
+    narrative, reporter correlation, binary images, URLs, and direct storage
+    references; the route metadata requires a uniform not-found response for
+    absent, expired, or unavailable manifests.
 
 ## [0.5.1] - 2026-08-20
 

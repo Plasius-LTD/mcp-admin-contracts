@@ -57,7 +57,8 @@ The exported registry currently covers:
 - bounded grouped user-aggregation summaries without raw per-user export
 - privacy-safe feedback intelligence for immutable bug-health and satisfaction
   reports, deterministic alerts, processor freshness, and
-  reporter-identifier-free structured entries
+  reporter-identifier-free structured entries and safe in-game reconstruction
+  manifests
 - read-only global Token overview, pseudonymous wallet/activity, and bounded
   spend-trend descriptors
 - governed asset catalog, source-intake, pipeline, and review descriptors for
@@ -174,6 +175,7 @@ contracts:
 - `listFeedbackAlerts`
 - `getFeedbackFreshness`
 - `listFeedbackStructuredEntries`
+- `getFeedbackGameReconstruction`
 
 Every feedback descriptor carries the canonical default-off rollout flag
 `feedback.mcp.enabled`, required capability `admin.feedback.read`, complete
@@ -185,6 +187,10 @@ runtime owns evaluation of those controls and must fail closed. When the flag,
 scope, or capability is unavailable, the consumer-visible fallback is that the
 feedback actions are omitted or rejected; this package does not evaluate
 access.
+
+`MCP_ADMIN_FEEDBACK_HOST_DEFAULT_ENABLED` is exported as `false` so host
+registries can verify the intended initial state without treating this public
+metadata package as a runtime flag evaluator.
 
 The global AI-plugin manifest deliberately retains its existing
 `openid email profile mcp:access` base scopes. The feedback scopes remain
@@ -205,22 +211,36 @@ exact `packetType`-discriminated union: the bug variant alone permits
 Consumers must reject unknown or cross-packet fields before flattening the
 selected variant into route query parameters.
 
+The reconstruction action is an exact point read by lowercase UUIDv4 bug
+packet ID. It returns only the canonical
+`FeedbackGameReconstructionManifestSchema`: opaque content IDs, server-owned
+creation and expiry times, an allowlisted curated public asset-set ID, a
+translation notice key, and consented coarse renderer diagnostics. It has no
+list, search, cursor, free-form query, or mutation variant. The manifest is
+clearly labelled as a server-side reconstruction and is not a literal
+screenshot. It contains no captured pixels, binary image, narrative, DOM,
+reporter/control identity, request telemetry, URL, storage locator, arbitrary
+asset, or direct Blob reference. Hosts must return the same not-found response
+for absent, expired, and unavailable manifests to avoid adding a richer
+existence oracle.
+
 This package directly consumes the published `@plasius/schema ^1.4.0`
 dependency. Packet and report descriptors bind their schema sources to its
 feedback contract version `1.0.0`, and their vocabularies and schema identity
 metadata are imported from that package at runtime. Entries are discriminated
 by the canonical
 `feedback-bug-packet`/`feedback-review-packet` identities; hourly bug-health,
-daily satisfaction, advisories, diagnostics, and processor checkpoints use
-the same closed kebab-case vocabulary and lowercase UUIDv4 constraints as the
-canonical schemas. The registry-generated lock resolves the package directly;
-source, file, and Git dependency pins remain prohibited.
+daily satisfaction, advisories, diagnostics, processor checkpoints, and safe
+reconstruction manifests use the same closed kebab-case vocabulary and
+lowercase UUIDv4 constraints as the canonical schemas. The registry-generated
+lock resolves the package directly; source, file, and Git dependency pins
+remain prohibited.
 
 The contracts explicitly exclude account, reporter, network, session,
 user-agent, locale, client-time, referrer, coordinate, dimension, and adapter
 identifiers; credentials and secrets; financial and government identifiers;
-filenames and raw warnings; narrative, binary images, Blob references, raw
-URLs, unrestricted scans, and mutations.
+filenames and raw warnings; narrative, binary images, client pixels, request
+telemetry, Blob references, raw URLs, unrestricted scans, and mutations.
 Narrative-derived data is limited to closed classifications; it cannot include
 summaries, quotations, embeddings, hashes, matched values, or model traces.
 Renderer diagnostics are bounded structured facts only and never

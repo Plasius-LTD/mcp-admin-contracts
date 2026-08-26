@@ -15,6 +15,7 @@ import {
   FEEDBACK_VIEWPORT_BUCKETS,
   FeedbackBugPacketSchema,
   FeedbackDailySatisfactionReportSchema,
+  FeedbackGameReconstructionManifestSchema,
   FeedbackHourlyBugReportSchema,
   FeedbackProcessorCheckpointSchema,
   FeedbackReviewPacketSchema,
@@ -56,7 +57,7 @@ export {
 };
 export type { McpAdminContractDescriptionKey };
 
-export const MCP_ADMIN_CONTRACT_VERSION = "2026-08-20.v7";
+export const MCP_ADMIN_CONTRACT_VERSION = "2026-08-26.v8";
 export const MCP_ADMIN_REGISTRY_SOURCE = "@plasius/mcp-admin-contracts";
 
 export const MCP_ADMIN_FOUNDATION_FLAG_ID = "mcp.admin.foundation.enabled";
@@ -121,6 +122,8 @@ export const MCP_ADMIN_MODEL_OAUTH_SCOPES: readonly string[] = Object.freeze([
 
 const canonicalModelToolDefinitions = listModelMcpToolDefinitions();
 export const MCP_ADMIN_FEEDBACK_FLAG_ID = "feedback.mcp.enabled";
+/** Metadata only: the hosted runtime must register the feedback MCP family off. */
+export const MCP_ADMIN_FEEDBACK_HOST_DEFAULT_ENABLED = false;
 export const MCP_ADMIN_FEEDBACK_READ_CAPABILITY = "admin.feedback.read";
 export const MCP_ADMIN_BASE_OAUTH_SCOPE = MCP_ACCESS_SCOPE;
 export const MCP_ADMIN_FEEDBACK_READ_OAUTH_SCOPE =
@@ -174,12 +177,14 @@ export const MCP_ADMIN_FEEDBACK_PRIVACY_EXCLUSIONS = [
   "matched-values",
   "model-traces",
   "binary-images",
+  "client-pixels",
   "filenames",
   "exact-coordinates",
   "exact-dimensions",
   "adapter-fingerprints",
   "raw-warnings",
   "blob-references",
+  "request-telemetry",
   "raw-urls",
   "unrestricted-scans",
   "mutations",
@@ -302,6 +307,7 @@ export interface McpCanonicalSchemaSource {
 const canonicalFeedbackSchemas = Object.freeze({
   FeedbackBugPacketSchema,
   FeedbackReviewPacketSchema,
+  FeedbackGameReconstructionManifestSchema,
   FeedbackHourlyBugReportSchema,
   FeedbackDailySatisfactionReportSchema,
   FeedbackProcessorCheckpointSchema,
@@ -1509,21 +1515,24 @@ const canonicalGameDiagnosticsVariantField = (
     ),
   });
 
-const canonicalGameDiagnosticsField = discriminatedUnionField(
-  "Canonical `FeedbackGameDiagnostics`; its surface must equal the containing bug packet surface and it cannot express pixels, DOM, text, URLs, filenames, coordinates, or adapter fingerprints.",
-  "surfaceId",
-  [
-    canonicalGameDiagnosticsVariantField(
-      "site.generator",
-      "generator.renderer-diagnostics.v1",
-    ),
-    canonicalGameDiagnosticsVariantField(
-      "site.gpu-demo",
-      "gpu-demo.renderer-diagnostics.v1",
-    ),
-  ],
-  { required: false },
-);
+const canonicalGameDiagnosticsField = (
+  required: boolean,
+): McpFieldShape =>
+  discriminatedUnionField(
+    "Canonical `FeedbackGameDiagnostics`; its surface must equal the containing bug packet surface and it cannot express pixels, DOM, text, URLs, filenames, coordinates, or adapter fingerprints.",
+    "surfaceId",
+    [
+      canonicalGameDiagnosticsVariantField(
+        "site.generator",
+        "generator.renderer-diagnostics.v1",
+      ),
+      canonicalGameDiagnosticsVariantField(
+        "site.gpu-demo",
+        "gpu-demo.renderer-diagnostics.v1",
+      ),
+    ],
+    required ? {} : { required: false },
+  );
 
 const canonicalBugPacketField = feedbackClosedObjectField(
   "Canonical identifier-free immutable `FeedbackBugPacket`.",
@@ -1544,7 +1553,7 @@ const canonicalBugPacketField = feedbackClosedObjectField(
     releaseId: canonicalSafeIdField("Server-owned release identifier."),
     buildId: canonicalSafeIdField("Server-owned build identifier."),
     analysis: canonicalAnalysisProjectionField,
-    gameDiagnostics: canonicalGameDiagnosticsField,
+    gameDiagnostics: canonicalGameDiagnosticsField(false),
   },
 );
 
@@ -1566,6 +1575,33 @@ const canonicalFeedbackPacketField = discriminatedUnionField(
   "Canonical bug/review packet discriminated by exact schema identity.",
   "type",
   [canonicalBugPacketField, canonicalReviewPacketField],
+);
+
+const canonicalGameReconstructionManifestField = feedbackClosedObjectField(
+  "Canonical safe server-side reconstruction manifest. It is a labelled reconstruction from curated public assets and consented coarse diagnostics, not a literal screenshot.",
+  {
+    ...canonicalSchemaIdentityFields("feedback-game-reconstruction-manifest"),
+    reconstructionId: canonicalUuidV4Field(
+      "Opaque canonical reconstruction UUIDv4.",
+    ),
+    bugPacketId: canonicalUuidV4Field(
+      "Opaque canonical source bug-packet UUIDv4; it cannot identify a reporter.",
+    ),
+    createdAt: canonicalDateTimeField(
+      "Server-owned reconstruction creation time.",
+    ),
+    expiresAt: canonicalDateTimeField(
+      "Server-owned expiry, strictly after creation and no more than 30 days later.",
+    ),
+    curatedAssetSetId: canonicalSafeIdField(
+      "Allowlisted curated public asset-set identifier; never a path, URL, or Blob reference.",
+    ),
+    noticeKey: canonicalSafeIdField(
+      "Stable translation key labelling this as a reconstruction rather than a screenshot.",
+      160,
+    ),
+    diagnostics: canonicalGameDiagnosticsField(true),
+  },
 );
 
 const canonicalDistributionField = (
@@ -2204,6 +2240,38 @@ export const MCP_ADMIN_FEEDBACK_ACTIONS: readonly McpActionDescriptor[] =
           canonicalFeedbackPacketField,
           { maxItems: MCP_ADMIN_FEEDBACK_MAX_PAGE_SIZE },
         ),
+      },
+    },
+    {
+      name: "getFeedbackGameReconstruction",
+      ...translatedDescription(
+        mcpAdminContractDescriptionKeys.actionGetFeedbackGameReconstruction,
+      ),
+      ...feedbackDescriptorMetadata,
+      schemaSource: feedbackSchemaSource(
+        "FeedbackGameReconstructionManifestSchema",
+      ),
+      execution: {
+        method: "GET",
+        path: "/api/admin/feedback/reconstructions/{bugPacketId}",
+        source: "near-future-route",
+        notes: [
+          "Reads one schema-validated, clearly labelled server-side reconstruction manifest from consented coarse diagnostics and curated public assets; it is not a literal screenshot.",
+          "Returns no binary image, client pixels, DOM, narrative, reporter or control identity, request telemetry, URL, arbitrary asset, direct Blob reference, or storage locator.",
+          "The runtime must validate the exact lowercase UUIDv4 path value, enforce fail-closed rate limits and dedicated audit, and return one uniform not-found response for absent, expired, or unavailable manifests.",
+          "This point-read contract has no list, scan, cursor, free-form query, or mutation operation.",
+        ],
+      },
+      input: {
+        bugPacketId: {
+          ...canonicalUuidV4Field(
+            "Exact opaque bug-packet UUIDv4 for one approved reconstruction.",
+          ),
+          required: true,
+        },
+      },
+      output: {
+        item: canonicalGameReconstructionManifestField,
       },
     },
   ]);

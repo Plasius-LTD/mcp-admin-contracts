@@ -37,23 +37,23 @@ import {
 const canonicalTools = listModelMcpToolDefinitions();
 
 describe("canonical model-resolution discovery", () => {
-  it("adds all eight canonical snake_case tools without changing legacy descriptors", () => {
+  it("keeps all eight canonical snake_case tools separate from REST descriptors", () => {
     const discovery = buildMcpDiscoveryResponse();
 
-    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-20.v7");
+    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-26.v8");
     expect(discovery.modelTools?.map(({ name }) => name)).toEqual(
       MODEL_MCP_TOOL_NAMES,
     );
     expect(discovery.modelSourceOfTruth).toBe("@plasius/asset-mcp");
-    expect(discovery.actions).toHaveLength(48);
+    expect(discovery.actions).toHaveLength(49);
     expect(discovery.actions.some(({ name }) => name.includes("_model_"))).toBe(
       false,
     );
 
     const serializedLegacyActions = JSON.stringify(MCP_ADMIN_ACTIONS);
-    expect(Buffer.byteLength(serializedLegacyActions)).toBe(158_141);
+    expect(Buffer.byteLength(serializedLegacyActions)).toBe(169_037);
     expect(createHash("sha256").update(serializedLegacyActions).digest("hex")).toBe(
-      "c3a42439942329e3b23ad40b656032c74ba7201ca24e81e5429e8d0a338bea6b",
+      "81dd799814f2c83a16b829eba5846bc6d64894584dbcea1ad059462a995fca1f",
     );
   });
 
