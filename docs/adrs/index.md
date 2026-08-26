@@ -6,3 +6,4 @@
 - [ADR 0004: Owner Token adjustment MCP boundary](./adr-0004-owner-token-adjustment-mcp-boundary.md)
 - [ADR 0005: Privacy-Safe Read-Only Feedback Contract](./adr-0005-privacy-safe-read-only-feedback-contract.md)
 - [ADR 0006: Canonical Model-Resolution Discovery](./adr-0006-canonical-model-resolution-discovery.md)
+- [ADR 0007: Safe Game Reconstruction Point Read](./adr-0007-safe-game-reconstruction-point-read.md)

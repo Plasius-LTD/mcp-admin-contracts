@@ -281,6 +281,8 @@ describe("MCP admin contracts", () => {
     const getFeedbackFreshness = schema.actions.getFeedbackFreshness!;
     const listFeedbackStructuredEntries =
       schema.actions.listFeedbackStructuredEntries!;
+    const getFeedbackGameReconstruction =
+      schema.actions.getFeedbackGameReconstruction!;
 
     expect(listFeatureFlags.execution.path).toBe("/api/mcp/feature-flags");
     expect(enableFeatureFlag.input.flagKey!.required).toBe(true);
@@ -420,6 +422,14 @@ describe("MCP admin contracts", () => {
     expect(listFeedbackStructuredEntries.output.items!.items).toMatchObject({
       type: "discriminated-union",
       discriminator: "type",
+    });
+    expect(getFeedbackGameReconstruction.input.bugPacketId).toMatchObject({
+      required: true,
+      pattern: CANONICAL_FEEDBACK_UUID_V4_PATTERN,
+    });
+    expect(getFeedbackGameReconstruction.output.item).toMatchObject({
+      type: "object",
+      additionalProperties: false,
     });
     expect(schema.contextShape.extensionRules!.properties?.notes?.itemType).toBe("string");
     expect(enableFeatureFlag.verification?.descriptionKey).toBe(
@@ -700,7 +710,7 @@ describe("MCP admin contracts", () => {
   });
 
   it("publishes a read-only, bounded and immutable feedback registry", () => {
-    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-20.v7");
+    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-26.v8");
     expect(Object.isFrozen(MCP_ADMIN_FEEDBACK_ACTIONS)).toBe(true);
     expect(Object.isFrozen(MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES)).toBe(
       true,
@@ -711,6 +721,7 @@ describe("MCP admin contracts", () => {
       "listFeedbackAlerts",
       "getFeedbackFreshness",
       "listFeedbackStructuredEntries",
+      "getFeedbackGameReconstruction",
     ]);
 
     for (const action of MCP_ADMIN_FEEDBACK_ACTIONS) {
@@ -1387,12 +1398,14 @@ describe("MCP admin contracts", () => {
       "matched-values",
       "model-traces",
       "binary-images",
+      "client-pixels",
       "filenames",
       "exact-coordinates",
       "exact-dimensions",
       "adapter-fingerprints",
       "raw-warnings",
       "blob-references",
+      "request-telemetry",
       "raw-urls",
       "unrestricted-scans",
       "mutations",
@@ -1569,6 +1582,7 @@ describe("MCP admin contracts", () => {
             "listFeedbackAlerts",
             "getFeedbackFreshness",
             "listFeedbackStructuredEntries",
+            "getFeedbackGameReconstruction",
           ],
         }),
       ]),

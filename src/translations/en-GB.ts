@@ -61,6 +61,8 @@ export const mcpAdminContractsEnGbTranslations = {
     "Read safe freshness metadata for the hourly bug and daily satisfaction processors.",
   "mcpAdminContracts.action.listFeedbackStructuredEntries.description":
     "List bounded reporter-identifier-free structured feedback entries without narrative or storage references.",
+  "mcpAdminContracts.action.getFeedbackGameReconstruction.description":
+    "Read one clearly labelled safe in-game reconstruction manifest without captured pixels, narrative, reporter identity, or storage references.",
   "mcpAdminContracts.action.searchAssetCatalog.description":
     "Search promoted asset catalog records without live third-party lookup.",
   "mcpAdminContracts.action.getAssetManifest.description":

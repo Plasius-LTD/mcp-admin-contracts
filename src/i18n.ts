@@ -56,6 +56,8 @@ export const mcpAdminContractDescriptionKeys = {
     "mcpAdminContracts.action.getFeedbackFreshness.description",
   actionListFeedbackStructuredEntries:
     "mcpAdminContracts.action.listFeedbackStructuredEntries.description",
+  actionGetFeedbackGameReconstruction:
+    "mcpAdminContracts.action.getFeedbackGameReconstruction.description",
   actionSearchAssetCatalog:
     "mcpAdminContracts.action.searchAssetCatalog.description",
   actionGetAssetManifest:

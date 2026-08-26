@@ -50,7 +50,9 @@ unauthorized callers must receive neither callable tool discovery nor data.
 Current feedback contract:
 
 - `feedback.mcp.enabled` is the canonical parent rollout flag for the
-  read-only feedback action family.
+  read-only feedback action family. The hosted site must register it disabled
+  by default and may enable it only through its remotely controlled flag
+  authority; publishing this package must never enable the family.
 - `admin.feedback.read` is carried as the required capability. Complete
   action-level OAuth metadata contains `mcp:access` and
   `admin.feedback.read`.
