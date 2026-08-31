@@ -9,6 +9,8 @@
   - (placeholder)
 
 - **Fixed**
+  - Preserved hosted pull-request isolation while disabling package-manager
+    cache finalization and bounding self-hosted main validation runtime.
   - (placeholder)
 
 - **Security**
