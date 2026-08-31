@@ -3,6 +3,20 @@
 ## Unreleased
 
 - **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.6.1] - 2026-08-31
+
+- **Added**
   - Exposed the canonical ChatGPT file attachment and paired rights-attestation
     schema for `resolve_model_request`, including PVOX result metadata.
 
@@ -278,3 +292,4 @@
 [0.5.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.5.0
 [0.5.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.5.1
 [0.6.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.0
+[0.6.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.1
