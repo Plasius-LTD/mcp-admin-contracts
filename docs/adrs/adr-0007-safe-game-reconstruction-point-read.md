@@ -31,7 +31,7 @@ canonical lowercase UUIDv4 bug-packet ID. It has no list, search, cursor,
 free-form query, arbitrary date range, or mutation form.
 
 The output is one closed projection of the published
-`@plasius/schema ^1.4.0`
+`@plasius/schema ^1.4.3`
 `FeedbackGameReconstructionManifestSchema`. It contains only:
 
 - canonical type and contract version;

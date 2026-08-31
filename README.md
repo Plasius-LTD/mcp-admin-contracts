@@ -236,7 +236,7 @@ asset, or direct Blob reference. Hosts must return the same not-found response
 for absent, expired, and unavailable manifests to avoid adding a richer
 existence oracle.
 
-This package directly consumes the published `@plasius/schema ^1.4.0`
+This package directly consumes the published `@plasius/schema ^1.4.3`
 dependency. Packet and report descriptors bind their schema sources to its
 feedback contract version `1.0.0`, and their vocabularies and schema identity
 metadata are imported from that package at runtime. Entries are discriminated
