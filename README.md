@@ -71,7 +71,7 @@ The exported registry currently covers:
 ### Canonical model resolution
 
 The additive `modelTools` discovery family advertises the eight exact MCP
-tool names owned by `@plasius/asset-mcp 0.1.6`:
+tool names owned by `@plasius/asset-mcp 0.1.7`:
 
 - `list_model_search_rankers`
 - `search_model_catalog`
@@ -88,7 +88,10 @@ all legacy descriptors and exports remain source-compatible. The schema
 response references the canonical input/output schema objects, annotations,
 OAuth security schemes, capabilities, review-result metadata, and rollout
 metadata directly from `@plasius/asset-mcp` rather than maintaining local
-copies. Each wrapper also carries bounded verification notes identifying the
+copies. The `resolve_model_request` schema includes the canonical ChatGPT file
+parameter, paired rights attestation, PVOX result metadata, and fail-closed
+rollout controls from that source package. Each wrapper also carries bounded
+verification notes identifying the
 canonical result or follow-up tool used to confirm an operation.
 
 Every model tool requires the parent
@@ -96,9 +99,10 @@ Every model tool requires the parent
 future generator additionally carry the conditional, fail-closed
 `asset.pipeline.external-model-harvest.enabled` and
 `asset.pipeline.ai-model-generation.enabled` flags only on the tools that may
-attempt those fallbacks. Installing this package does not evaluate any flag or
-make a hosted tool callable; the consuming runtime owns fail-closed rollout,
-OAuth, capability, ownership, and audit enforcement.
+attempt those fallbacks. PVOX-producing paths additionally carry
+`asset.pipeline.pvox-models.enabled`. Installing this package does not evaluate
+any flag or make a hosted tool callable; the consuming runtime owns fail-closed
+rollout, OAuth, capability, ownership, and audit enforcement.
 
 Tool scopes and capabilities are preserved exactly, including distinct
 `asset.catalog.request`, `asset.catalog.confirm`, and operator-only
@@ -122,7 +126,7 @@ silently change later calls in the same process.
 
 Package-owned en-GB keys provide stable descriptions for every canonical tool.
 When discovery is built, description drift between those translations and the
-pinned canonical registry fails closed. `@plasius/asset-contracts 0.3.1`
+pinned canonical registry fails closed. `@plasius/asset-contracts 0.4.0`
 supplies the underlying model-resolution contract version; no model schema is
 redeclared here.
 

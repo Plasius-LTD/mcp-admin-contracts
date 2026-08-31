@@ -60,6 +60,8 @@ import {
   MCP_ADMIN_PRODUCTION_READINESS_ENV_VAR,
   MCP_ADMIN_PRODUCTION_READINESS_FLAG_ID,
   MCP_ADMIN_REGISTRY_SOURCE,
+  MCP_ADMIN_MODEL_RESOLUTION_CONTRACT_VERSION,
+  MCP_ADMIN_MODEL_TOOL_CONTRACT_VERSION,
   MCP_ASSET_CATALOG_REQUEST_CAPABILITY,
   MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID,
   MCP_ASSET_PIPELINE_FLAG_ID,
@@ -217,6 +219,44 @@ describe("MCP admin contracts", () => {
     });
     expect(response.actions.map((action) => action.name)).not.toContain("createPost");
     expect(response.actions.map((action) => action.name)).not.toContain("randomNumber");
+  });
+
+  it("publishes the canonical attachment-to-PVOX resolution contract", () => {
+    const discovery = buildMcpDiscoveryResponse();
+    const schema = buildMcpSchemaResponse();
+    const resolveTool = schema.modelTools?.resolve_model_request;
+    const resolveInput = resolveTool?.inputSchema as {
+      properties?: Record<string, unknown>;
+      dependentRequired?: Record<string, readonly string[]>;
+    };
+
+    expect(discovery.modelTools?.map(({ name }) => name)).toEqual([
+      "list_model_search_rankers",
+      "search_model_catalog",
+      "resolve_model_request",
+      "get_model_resolution",
+      "confirm_model_candidate",
+      "retry_model_resolution",
+      "cancel_model_resolution",
+      "rebuild_model_catalog_index",
+    ]);
+    expect(resolveTool?.description).toContain("stage an attached source");
+    expect(resolveInput.properties).toHaveProperty("sourceFile");
+    expect(resolveInput.properties).toHaveProperty("rightsAttestation");
+    expect(resolveInput.dependentRequired).toEqual({
+      sourceFile: ["rightsAttestation"],
+      rightsAttestation: ["sourceFile"],
+    });
+    expect(resolveTool?._meta?.["openai/fileParams"]).toEqual(["sourceFile"]);
+    expect(resolveTool?.pvoxResultContract).toMatchObject({
+      representation: "pvox",
+      contractVersion: "2026-08-20.v2",
+      contentType: "application/vnd.plasius.pvox",
+      fileExtension: ".pvox",
+      requiredFeatureFlag: "asset.pipeline.pvox-models.enabled",
+    });
+    expect(MCP_ADMIN_MODEL_TOOL_CONTRACT_VERSION).toBe("2026-07-13.v1");
+    expect(MCP_ADMIN_MODEL_RESOLUTION_CONTRACT_VERSION).toBe("2026-07-12.v1");
   });
 
   it("keeps legacy env constants source-compatible without using them for action rollout", () => {
@@ -710,7 +750,7 @@ describe("MCP admin contracts", () => {
   });
 
   it("publishes a read-only, bounded and immutable feedback registry", () => {
-    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-26.v8");
+    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-31.v9");
     expect(Object.isFrozen(MCP_ADMIN_FEEDBACK_ACTIONS)).toBe(true);
     expect(Object.isFrozen(MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES)).toBe(
       true,

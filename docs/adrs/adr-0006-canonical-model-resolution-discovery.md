@@ -19,14 +19,18 @@ adapters and could break consumers that treat that array as the legacy registry.
 
 ## Decision
 
-The package consumes pinned `@plasius/asset-mcp 0.1.6` and
-`@plasius/asset-contracts 0.3.1` releases.
+The package consumes pinned `@plasius/asset-mcp 0.1.7` and
+`@plasius/asset-contracts 0.4.0` releases.
 
 - `buildMcpDiscoveryResponse` adds `modelTools` summaries and canonical
   `modelResources` alongside, rather than inside, the legacy `actions` array.
 - `buildMcpSchemaResponse` references each canonical input schema, output
   schema, annotation set, security scheme, capability, review-result record,
   and rollout record directly from `@plasius/asset-mcp`.
+- The canonical `resolve_model_request` descriptor carries the ChatGPT
+  `sourceFile` parameter, its paired rights attestation, and PVOX result
+  metadata. This package advertises those records but never downloads or opens
+  the source.
 - Execution metadata identifies JSON-RPC 2.0 `tools/call` at `POST /api/mcp`.
   Existing descriptors retain their REST execution records unchanged.
 - Bounded verification notes identify whether the canonical result itself or
@@ -35,7 +39,7 @@ The package consumes pinned `@plasius/asset-mcp 0.1.6` and
   frozen so consumer mutation cannot alter later discovery responses.
 - The context response publishes the canonical tool and model-resolution
   contract versions, exact tool names, resource templates, required parent
-  flag, and conditional provider/generator flags.
+  flag, and conditional PVOX/provider/generator flags.
 - The model-family OAuth registry contains `mcp:access` plus all five asset
   capability scopes for issuer and protected-resource publication. Per-tool
   scopes remain the exact narrower sets owned by `@plasius/asset-mcp`.
@@ -47,9 +51,10 @@ The package consumes pinned `@plasius/asset-mcp 0.1.6` and
 - Runtime authentication, authorization, ownership, rollout evaluation,
   resource access, audit, and tool execution remain outside this package.
 
-The parent flag is `asset.pipeline.unified-ai-assets.enabled`. External
-provider acquisition and future generation use the conditional flags
-`asset.pipeline.external-model-harvest.enabled` and
+The parent flag is `asset.pipeline.unified-ai-assets.enabled`. PVOX paths,
+external provider acquisition, and future generation use the conditional flags
+`asset.pipeline.pvox-models.enabled`,
+`asset.pipeline.external-model-harvest.enabled`, and
 `asset.pipeline.ai-model-generation.enabled` respectively. This package only
 advertises those identifiers.
 
