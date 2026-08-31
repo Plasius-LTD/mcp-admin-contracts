@@ -3,16 +3,24 @@
 ## Unreleased
 
 - **Added**
-  - (placeholder)
+  - Exposed the canonical ChatGPT file attachment and paired rights-attestation
+    schema for `resolve_model_request`, including PVOX result metadata.
 
 - **Changed**
-  - (placeholder)
+  - Aligned model discovery with `@plasius/asset-mcp 0.1.7` and
+    `@plasius/asset-contracts 0.4.0` while preserving all eight tool names and
+    compatibility surfaces.
+  - Advanced the additive MCP Admin registry contract to `2026-08-31.v9` and
+    included the canonical PVOX feature flag in model-resolution context.
 
 - **Fixed**
-  - (placeholder)
+  - Updated the en-GB resolution description so strict canonical translation
+    validation remains fail closed without making discovery unusable.
 
 - **Security**
-  - (placeholder)
+  - Kept attachment acquisition, rights, PVOX, OAuth, capability, and rollout
+    metadata sourced from the pinned canonical registry without adding runtime
+    access to this public-safe package.
 
 ## [0.6.0] - 2026-08-26
 

@@ -76,7 +76,7 @@ const collectFieldKeys = (
 
 describe("privacy-safe feedback game reconstruction contract", () => {
   it("publishes one exact, read-only and fail-closed reconstruction point read", () => {
-    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-26.v8");
+    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-31.v9");
     expect(MCP_ADMIN_FEEDBACK_HOST_DEFAULT_ENABLED).toBe(false);
 
     const action = MCP_ADMIN_FEEDBACK_ACTIONS.find(

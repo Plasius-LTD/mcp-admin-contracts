@@ -30,6 +30,7 @@ import {
   MODEL_MCP_EXTERNAL_HARVEST_FEATURE_FLAG_ID,
   MODEL_MCP_GENERATION_FEATURE_FLAG_ID,
   MODEL_MCP_PIPELINE_MANAGE_CAPABILITY,
+  MODEL_MCP_PVOX_FEATURE_FLAG_ID,
   MODEL_MCP_SOURCE_MANAGE_CAPABILITY,
   MODEL_MCP_TOOL_NAMES,
   MODEL_MCP_UNIFIED_FEATURE_FLAG_ID,
@@ -57,7 +58,7 @@ export {
 };
 export type { McpAdminContractDescriptionKey };
 
-export const MCP_ADMIN_CONTRACT_VERSION = "2026-08-26.v8";
+export const MCP_ADMIN_CONTRACT_VERSION = "2026-08-31.v9";
 export const MCP_ADMIN_REGISTRY_SOURCE = "@plasius/mcp-admin-contracts";
 
 export const MCP_ADMIN_FOUNDATION_FLAG_ID = "mcp.admin.foundation.enabled";
@@ -89,6 +90,7 @@ export const MCP_ASSET_PIPELINE_FLAG_ID =
   "asset.pipeline.unified-ai-assets.enabled";
 export const MCP_ASSET_EXTERNAL_HARVEST_FLAG_ID =
   "asset.pipeline.external-model-harvest.enabled";
+export const MCP_ASSET_PVOX_FLAG_ID = MODEL_MCP_PVOX_FEATURE_FLAG_ID;
 export const MCP_ASSET_CATALOG_REQUEST_CAPABILITY =
   MODEL_MCP_CATALOG_REQUEST_CAPABILITY;
 export const MCP_ASSET_CATALOG_CONFIRM_CAPABILITY =
@@ -407,6 +409,7 @@ export interface McpModelResolutionContext {
   rpcMethod: "tools/call";
   requiredFeatureFlag: typeof MODEL_MCP_UNIFIED_FEATURE_FLAG_ID;
   conditionalFeatureFlags: readonly [
+    typeof MODEL_MCP_PVOX_FEATURE_FLAG_ID,
     typeof MODEL_MCP_EXTERNAL_HARVEST_FEATURE_FLAG_ID,
     typeof MODEL_MCP_GENERATION_FEATURE_FLAG_ID,
   ];
@@ -4073,6 +4076,7 @@ const buildMcpModelResolutionContext = (): McpModelResolutionContext => ({
   rpcMethod: "tools/call",
   requiredFeatureFlag: MODEL_MCP_UNIFIED_FEATURE_FLAG_ID,
   conditionalFeatureFlags: [
+    MODEL_MCP_PVOX_FEATURE_FLAG_ID,
     MODEL_MCP_EXTERNAL_HARVEST_FEATURE_FLAG_ID,
     MODEL_MCP_GENERATION_FEATURE_FLAG_ID,
   ],
@@ -4155,7 +4159,7 @@ export const MCP_ADMIN_CONTEXT_SHAPE: Record<string, McpFieldShape> = deepFreeze
         { constValue: MODEL_MCP_UNIFIED_FEATURE_FLAG_ID },
       ),
       conditionalFeatureFlags: arrayField(
-        "Provider and generator flags evaluated only when their fallback is attempted.",
+        "PVOX, provider, and generator flags evaluated only when their governed path is attempted.",
         "string",
       ),
       tools: arrayField("Canonical snake_case model-resolution tool names.", "string"),
