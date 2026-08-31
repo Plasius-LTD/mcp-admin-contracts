@@ -6,6 +6,20 @@
   - (placeholder)
 
 - **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.6.2] - 2026-08-31
+
+- **Added**
+  - (placeholder)
+
+- **Changed**
   - Refreshed the direct `@plasius/schema` dependency and registry lock to 1.4.3.
 
 - **Fixed**
@@ -293,3 +307,4 @@
 [0.5.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.5.1
 [0.6.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.0
 [0.6.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.1
+[0.6.2]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.2

@@ -1,6 +1,6 @@
 {
   "name": "@plasius/mcp-admin-contracts",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Public-safe MCP admin discovery contract descriptors and response builders.",
   "type": "module",
   "sideEffects": false,
