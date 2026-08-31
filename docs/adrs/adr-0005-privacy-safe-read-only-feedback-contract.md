@@ -78,7 +78,7 @@ authentication for unrelated tools while the feedback flag is off.
 Persisted entry projections are discriminated by the exact
 `feedback-bug-packet` and `feedback-review-packet` identities. Reports,
 advisories, game diagnostics, and processor checkpoints directly consume the
-published `@plasius/schema ^1.4.0` dependency and its feedback contract
+published `@plasius/schema ^1.4.3` dependency and its feedback contract
 `1.0.0`. Descriptor vocabularies and source identities are imported from the
 canonical package, while direct package-schema parity tests prevent this
 package from establishing a second feedback dialect. The npm-registry lock is
@@ -94,7 +94,7 @@ authoritative; source, file, and Git dependency pins are prohibited.
   configure both `mcp:access` and `admin.feedback.read` before enabling the
   feedback family.
 - The feedback family must continue to consume the released
-  `@plasius/schema ^1.4.0` contract directly and fail validation when its
+  `@plasius/schema ^1.4.3` contract directly and fail validation when its
   canonical schema identities or closed vocabularies diverge.
 - Runtime ingestion, storage, authorisation, reporting, audit, and mutation
   workflows remain outside this package.

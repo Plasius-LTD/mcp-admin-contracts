@@ -6,7 +6,7 @@
   - (placeholder)
 
 - **Changed**
-  - (placeholder)
+  - Refreshed the direct `@plasius/schema` dependency and registry lock to 1.4.3.
 
 - **Fixed**
   - (placeholder)
