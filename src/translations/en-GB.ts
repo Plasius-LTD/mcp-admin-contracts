@@ -94,7 +94,7 @@ export const mcpAdminContractsEnGbTranslations = {
   "mcpAdminContracts.action.searchModelCatalog.description":
     "Search promoted model catalog versions using hard constraints and one exact calibrated ranker selection.",
   "mcpAdminContracts.action.resolveModelRequest.description":
-    "Search the catalog and idempotently create asynchronous provider or generator fallback work when needed.",
+    "Search the catalog and idempotently stage an attached source or create asynchronous provider/generator fallback work.",
   "mcpAdminContracts.action.getModelResolution.description":
     "Read an owned immutable model-resolution revision, progress, questions, and review evidence.",
   "mcpAdminContracts.action.confirmModelCandidate.description":

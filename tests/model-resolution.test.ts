@@ -5,6 +5,7 @@ import {
   MODEL_MCP_CONTRACT_VERSION,
   MODEL_MCP_EXTERNAL_HARVEST_FEATURE_FLAG_ID,
   MODEL_MCP_GENERATION_FEATURE_FLAG_ID,
+  MODEL_MCP_PVOX_FEATURE_FLAG_ID,
   MODEL_MCP_RESOURCE_TEMPLATES,
   MODEL_MCP_TOOL_NAMES,
   MODEL_MCP_UNIFIED_FEATURE_FLAG_ID,
@@ -23,6 +24,7 @@ import {
   MCP_ASSET_CATALOG_REQUEST_CAPABILITY,
   MCP_ASSET_CATALOG_REVIEW_CAPABILITY,
   MCP_ASSET_PIPELINE_MANAGE_CAPABILITY,
+  MCP_ASSET_PVOX_FLAG_ID,
   MCP_ASSET_SOURCE_MANAGE_CAPABILITY,
   buildMcpContextResponse,
   buildMcpDiscoveryResponse,
@@ -40,7 +42,7 @@ describe("canonical model-resolution discovery", () => {
   it("keeps all eight canonical snake_case tools separate from REST descriptors", () => {
     const discovery = buildMcpDiscoveryResponse();
 
-    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-26.v8");
+    expect(MCP_ADMIN_CONTRACT_VERSION).toBe("2026-08-31.v9");
     expect(discovery.modelTools?.map(({ name }) => name)).toEqual(
       MODEL_MCP_TOOL_NAMES,
     );
@@ -107,6 +109,7 @@ describe("canonical model-resolution discovery", () => {
     expect(byName.resolve_model_request?.rollout).toEqual({
       requiredFeatureFlag: MODEL_MCP_UNIFIED_FEATURE_FLAG_ID,
       conditionalFeatureFlags: [
+        MODEL_MCP_PVOX_FEATURE_FLAG_ID,
         MODEL_MCP_EXTERNAL_HARVEST_FEATURE_FLAG_ID,
         MODEL_MCP_GENERATION_FEATURE_FLAG_ID,
       ],
@@ -162,6 +165,7 @@ describe("canonical model-resolution discovery", () => {
     expect(MCP_ASSET_PIPELINE_MANAGE_CAPABILITY).toBe(
       "asset.pipeline.mcp.manage",
     );
+    expect(MCP_ASSET_PVOX_FLAG_ID).toBe("asset.pipeline.pvox-models.enabled");
     expect(MCP_ADMIN_MODEL_CAPABILITIES).toEqual({
       catalogRequest: "asset.catalog.request",
       catalogConfirm: "asset.catalog.confirm",
@@ -216,6 +220,7 @@ describe("canonical model-resolution discovery", () => {
       rpcMethod: "tools/call",
       requiredFeatureFlag: MODEL_MCP_UNIFIED_FEATURE_FLAG_ID,
       conditionalFeatureFlags: [
+        MODEL_MCP_PVOX_FEATURE_FLAG_ID,
         MODEL_MCP_EXTERNAL_HARVEST_FEATURE_FLAG_ID,
         MODEL_MCP_GENERATION_FEATURE_FLAG_ID,
       ],
