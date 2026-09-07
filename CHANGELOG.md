@@ -6,7 +6,8 @@
   - (placeholder)
 
 - **Changed**
-  - (placeholder)
+  - Refreshed the governed asset contract dependencies to the latest published
+    `@plasius/asset-contracts` `0.4.1` and `@plasius/asset-mcp` `0.1.8` releases.
 
 - **Fixed**
   - Preserved hosted pull-request isolation while disabling package-manager
