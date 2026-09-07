@@ -10,12 +10,15 @@
     `@plasius/asset-contracts` `0.4.1` and `@plasius/asset-mcp` `0.1.8` releases.
 
 - **Fixed**
-  - Preserved hosted pull-request isolation while disabling package-manager
-    cache finalization and bounding self-hosted main validation runtime.
+  - Disabled package-manager cache finalization and bounded validation runtime.
+  - Required confirmed release metadata PR merge state before continuing,
+    including successful-but-queued merge commands and bounded failure handling.
   - (placeholder)
 
 - **Security**
-  - (placeholder)
+  - Restricted all CI jobs to trusted repository pushes on explicit self-hosted
+    Linux/X64 capacity, with no hosted fallback or PR-head execution.
+  - Restricted scheduled dependency validation to main on the same capacity.
 
 ## [0.6.2] - 2026-08-31
 
