@@ -7,3 +7,4 @@
 - [ADR 0005: Privacy-Safe Read-Only Feedback Contract](./adr-0005-privacy-safe-read-only-feedback-contract.md)
 - [ADR 0006: Canonical Model-Resolution Discovery](./adr-0006-canonical-model-resolution-discovery.md)
 - [ADR 0007: Safe Game Reconstruction Point Read](./adr-0007-safe-game-reconstruction-point-read.md)
+- [ADR 0008: Trusted CI and confirmed release merges](./adr-0008-trusted-ci-and-confirmed-release-merges.md)

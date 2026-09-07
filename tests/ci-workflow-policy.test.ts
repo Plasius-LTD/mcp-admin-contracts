@@ -12,27 +12,28 @@ const releasePrepareWorkflow = read(".github/workflows/release-prepare.yml");
 const npmConfig = read(".npmrc");
 
 describe("release workflow trust boundaries", () => {
-  it("runs pull-request validation only for same-repository heads", () => {
-    expect(ciWorkflow).toMatch(/pull_request:\s*\n\s+branches: \[main\]/u);
-    expect(ciWorkflow).not.toContain("pull_request_target:");
+  it("validates repository-owned pushes on explicit self-hosted capacity", () => {
+    expect(ciWorkflow).toMatch(/push:\s*\n\s+branches: \["\*\*"\]/u);
+    expect(ciWorkflow).not.toMatch(/^\s*(?:pull_request|pull_request_target):/mu);
+    expect(ciWorkflow).not.toMatch(/ubuntu-latest|fromJSON|inputs\./u);
+    expect(ciWorkflow.match(/runs-on: \[self-hosted, Linux, X64\]/gu)).toHaveLength(3);
     expect(ciWorkflow).toContain("name: Trusted head admission");
-    expect(ciWorkflow).toContain("External fork pull requests cannot be merged");
+    expect(ciWorkflow).toContain("if: ${{ github.event_name == 'push' }}");
     expect(ciWorkflow.match(/needs: trusted_head/gu)).toHaveLength(2);
-    expect(
-      ciWorkflow.match(
-        /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/gu,
-      ),
-    ).toHaveLength(2);
-    expect(
-      ciWorkflow.match(
-        /runs-on: \$\{\{ fromJSON\(github\.event_name == 'pull_request' && '\["ubuntu-latest"\]' \|\| '\["self-hosted","Linux","X64"\]'\) \}\}/gu,
-      ),
-    ).toHaveLength(2);
     expect(ciWorkflow.match(/actions\/checkout@v5/gu)).toHaveLength(2);
     expect(ciWorkflow.match(/actions\/setup-node@v6/gu)).toHaveLength(2);
-    expect(ciWorkflow).toContain("cache: ${{ github.event_name == 'pull_request' && 'npm' || '' }}");
     expect(ciWorkflow.match(/package-manager-cache: false/gu)).toHaveLength(2);
+    expect(ciWorkflow).not.toMatch(/cache:.*npm/u);
     expect(ciWorkflow).toContain("timeout-minutes: 30");
+  });
+
+  it("bounds scheduled dependency validation to trusted main self-hosted capacity", () => {
+    const auditWorkflow = read(".github/workflows/npm-audit-fix.yml");
+    expect(auditWorkflow).toContain("runs-on: [self-hosted, Linux, X64]");
+    expect(auditWorkflow).toContain("if: ${{ github.ref == 'refs/heads/main' }}");
+    expect(auditWorkflow).toContain("timeout-minutes: 30");
+    expect(auditWorkflow).toContain("package-manager-cache: false");
+    expect(auditWorkflow).not.toMatch(/ubuntu-latest|pull_request_target:|^\s+pull_request:|cache: "npm"/mu);
   });
 
   it("binds a second publication run to the prepared main SHA and successful CI", () => {
@@ -118,7 +119,7 @@ describe("release workflow trust boundaries", () => {
     expect(releasePrepareWorkflow).not.toContain("--force-with-lease");
     expect(releasePrepareWorkflow).not.toContain("secrets: inherit");
     expect(releasePrepareWorkflow).toContain(
-      'gh pr merge "${PR_NUMBER}" --squash --delete-branch >/dev/null 2>&1 || true',
+      'if gh pr merge "${PR_NUMBER}" --squash --delete-branch >/dev/null 2>&1; then',
     );
   });
 

@@ -314,13 +314,26 @@ Apache-2.0
 ## Release integrity
 
 CI keeps the administrative contributor registry outside Git and npm package
-artifacts using exact, case-normalised path checks. External fork heads are
-rejected; same-repository pull requests validate on GitHub-hosted runners and
-main pushes validate on approved self-hosted runners. Release preparation and
+artifacts using exact, case-normalised path checks. CI accepts repository-owned
+branch pushes only, using literal `[self-hosted, Linux, X64]` labels for every
+job. External fork and pull-request events never execute on this capacity; a
+maintainer must review and move a contribution to a repository-owned branch.
+Scheduled dependency validation uses the same labels and is restricted to main. Release preparation and
 publication use a two-run exact-main protocol on GitHub-hosted Node.js 24.18.0
 LTS. A read-only job seals the package tarball and SBOM before a dependency-free
 production job publishes that exact artifact through npm OIDC with provenance;
 there is no npm write-token fallback. CD remains disabled until the npm trusted
 publisher binding and protected-branch-only production environment are
-independently verified.
+independently verified. Release preparation continues only after observing the
+metadata PR as `MERGED`; a queued merge request is insufficient. Closed PRs,
+unreadable or unexpected states, and the bounded timeout stop publication.
+
+For restricted runner groups, review and lock each implementation or generated
+release branch with administrator enforcement before admitting its exact
+workflow branch ref. Preserve required checks and remove temporary admission
+after merge. Allocate a fresh pipeline-owned version; never reuse removed npm
+versions. The inherited `platform.public-artifact-integrity.enabled` flag
+controls restoration, while mandatory integrity checks cannot be bypassed.
+Rollback disables `cd.yml` without restoring administrative files or npm tokens.
+See [ADR 0008](docs/adrs/adr-0008-trusted-ci-and-confirmed-release-merges.md).
 <!-- END PLASIUS RELEASE INTEGRITY -->
