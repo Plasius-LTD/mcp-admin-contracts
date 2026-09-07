@@ -6,6 +6,20 @@
   - (placeholder)
 
 - **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.6.3] - 2026-09-07
+
+- **Added**
+  - (placeholder)
+
+- **Changed**
   - Refreshed the governed asset contract dependencies to the latest published
     `@plasius/asset-contracts` `0.4.1` and `@plasius/asset-mcp` `0.1.8` releases.
 
@@ -314,3 +328,4 @@
 [0.6.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.0
 [0.6.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.1
 [0.6.2]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.2
+[0.6.3]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.3
