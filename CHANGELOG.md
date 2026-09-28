@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Refresh npm dependencies and published Plasius package baselines after upstream releases (2026-09-28).
+- Update the direct schema contract test and documentation to the verified schema 1.4.4 registry artifact.
+
 - **Added**
   - (placeholder)
 

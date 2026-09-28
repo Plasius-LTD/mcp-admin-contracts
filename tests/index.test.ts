@@ -1072,7 +1072,7 @@ describe("MCP admin contracts", () => {
     ).toBe(false);
   });
 
-  it("consumes the published @plasius/schema ^1.4.3 contract directly", () => {
+  it("consumes the published @plasius/schema ^1.4.4 contract directly", () => {
     const packageManifest = JSON.parse(
       readFileSync(new URL("../package.json", import.meta.url), "utf8"),
     ) as {
@@ -1100,7 +1100,7 @@ describe("MCP admin contracts", () => {
       "utf8",
     );
 
-    expect(packageManifest.dependencies?.["@plasius/schema"]).toBe("^1.4.3");
+    expect(packageManifest.dependencies?.["@plasius/schema"]).toBe("^1.4.4");
     expect(packageManifest.devDependencies ?? {}).not.toHaveProperty(
       "@plasius/schema",
     );
@@ -1109,11 +1109,11 @@ describe("MCP admin contracts", () => {
     );
     expect(packageLock.packages?.["node_modules/@plasius/schema"]).toMatchObject(
       {
-        version: "1.4.3",
+        version: "1.4.4",
         resolved:
-          "https://registry.npmjs.org/@plasius/schema/-/schema-1.4.3.tgz",
+          "https://registry.npmjs.org/@plasius/schema/-/schema-1.4.4.tgz",
         integrity:
-          "sha512-/IW+aykfsmPhlaQrSEi3RR6sR0tTe3O4wJAfGVrowG+GKOp4AqJ2302GApDLlnATqwPu55Ms0RkXGue/dQidFQ==",
+          "sha512-GfFMaXZr7H8NXD05TwW9TV11mQnMNFT/ZWQSgKCtHDHGyyNX6e6BriS/aNhSkYB8n6ed0retPPZrp6HFXPY3Fg==",
       },
     );
     expect(
@@ -1121,7 +1121,7 @@ describe("MCP admin contracts", () => {
     ).not.toBe(true);
     for (const document of [readme, adr]) {
       expect(document).toMatch(
-        /directly\s+(?:import|imports|consume|consumes)(?:\s+the)?(?:\s+published)?\s+`@plasius\/schema \^1\.4\.3`/i,
+        /directly\s+(?:import|imports|consume|consumes)(?:\s+the)?(?:\s+published)?\s+`@plasius\/schema \^1\.4\.4`/i,
       );
       expect(document).not.toMatch(/release (?:remains )?blocked/i);
     }
