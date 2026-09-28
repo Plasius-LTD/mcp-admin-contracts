@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.6.4] - 2026-09-28
+
 - Refresh npm dependencies and published Plasius package baselines after upstream releases (2026-09-28).
 - Update the direct schema contract test and documentation to the verified schema 1.4.4 registry artifact.
 
@@ -332,3 +346,4 @@
 [0.6.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.1
 [0.6.2]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.2
 [0.6.3]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.3
+[0.6.4]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.4
