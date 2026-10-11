@@ -61,7 +61,7 @@
   },
   "homepage": "https://github.com/Plasius-LTD/mcp-admin-contracts#readme",
   "peerDependencies": {
-    "@plasius/translations": "^1.0.25"
+    "@plasius/translations": "^1.0.26"
   },
   "peerDependenciesMeta": {
     "@plasius/translations": {
@@ -70,7 +70,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@plasius/translations": "^1.0.25",
+    "@plasius/translations": "^1.0.26",
     "@types/node": "^25.9.5",
     "@types/react": "^19.2.18",
     "@typescript-eslint/eslint-plugin": "^8.69.0",
@@ -107,8 +107,8 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@plasius/asset-contracts": "0.4.3",
-    "@plasius/asset-mcp": "0.1.10",
-    "@plasius/schema": "^1.4.5"
+    "@plasius/asset-contracts": "0.4.4",
+    "@plasius/asset-mcp": "0.1.11",
+    "@plasius/schema": "^1.4.6"
   }
 }
