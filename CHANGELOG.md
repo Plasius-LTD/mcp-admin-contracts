@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Refresh npm dependencies and the published Schema 1.4.7 contract baseline, retaining registry integrity and feedback-contract regression checks (weekly maintenance, 2026-10-18).
+
 - **Added**
   - (placeholder)
 
