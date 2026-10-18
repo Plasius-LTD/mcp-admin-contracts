@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.6.7] - 2026-10-18
+
 - Refresh npm dependencies and the published Schema 1.4.7 contract baseline, retaining registry integrity and feedback-contract regression checks (weekly maintenance, 2026-10-18).
 
 - **Added**
@@ -383,3 +397,4 @@
 [0.6.4]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.4
 [0.6.5]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.5
 [0.6.6]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.6
+[0.6.7]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.7
