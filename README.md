@@ -236,7 +236,7 @@ asset, or direct Blob reference. Hosts must return the same not-found response
 for absent, expired, and unavailable manifests to avoid adding a richer
 existence oracle.
 
-This package directly consumes the published `@plasius/schema ^1.4.7`
+This package directly consumes the published `@plasius/schema ^1.5.0`
 dependency. Packet and report descriptors bind their schema sources to its
 feedback contract version `1.0.0`, and their vocabularies and schema identity
 metadata are imported from that package at runtime. Entries are discriminated
@@ -278,6 +278,35 @@ const [action] = buildMcpDiscoveryResponse().actions;
 
 console.log(i18n.t(action.descriptionKey));
 ```
+
+### Feedback review workflow
+
+`MCP_ADMIN_FEEDBACK_REVIEW_ACTIONS` holds five opt-in descriptors for hosted MCP
+and Admin discovery: `listFeedbackReviewQueue`, `getFeedbackReviewItem`,
+`markFeedbackReviewed`, `processFeedback`, and `reopenFeedback`. The default
+registry and plugin OAuth manifest do not include them. Both hosts must
+explicitly integrate the descriptors and enforce every requirement in
+`access`, plus their existing transport gates, before advertising or calling
+a tool. Never treat `requiredCapability` alone as the authorization decision.
+
+The two reads require `mcp:access`, `admin.feedback.read`, and both
+`feedback.mcp.enabled` and `feedback.review-workflow.enabled`. The three
+writes additionally require `admin.feedback.manage` as a protected scope
+and capability, `feedback.processing.enabled`, and explicit user direction
+for the named packet and transition. Read-only grants do not inherit manage
+rights. Disable processing to omit and reject writes while preserving reads,
+or disable the workflow flag to omit and reject all five tools.
+
+The registry references the independently versioned workflow schemas in
+`@plasius/schema` 1.5.0. Hosts must close the input and output objects, validate
+the effective query and actor-free responses against those schemas, and
+bind opaque cursors to their packet or filters. Commands carry an expected
+revision and a random UUIDv4 key; the named tool supplies the action literal.
+Only process requires an outcome. The same key is for an exact retry, never
+another command or packet. Return mutation success only after durable audit,
+and expose no audit linkage, provider metadata or actor information. See
+[ADR-0009](./docs/adrs/adr-0009-opt-in-feedback-review-tools.md).
+
 
 ## Local Development
 
