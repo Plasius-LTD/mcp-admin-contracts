@@ -8,6 +8,12 @@ import {
   FEEDBACK_GAME_FEATURE_IDS,
   FEEDBACK_INTENT_IDS,
   FEEDBACK_PERSISTABLE_ISSUE_TYPES,
+  FEEDBACK_REVIEW_ACTIONS,
+  FEEDBACK_REVIEW_KINDS,
+  FEEDBACK_REVIEW_OUTCOMES,
+  FEEDBACK_REVIEW_STATUSES,
+  FEEDBACK_REVIEW_WORKFLOW_CONTRACT_VERSION,
+  type FeedbackReviewAction,
   FEEDBACK_RENDERER_BUCKETS,
   FEEDBACK_SENTIMENT_BUCKETS,
   FEEDBACK_SURFACE_IDS,
@@ -2278,6 +2284,248 @@ export const MCP_ADMIN_FEEDBACK_ACTIONS: readonly McpActionDescriptor[] =
       },
     },
   ]);
+
+/** Both MCP hosts must opt in after enforcing the complete action access tuple. */
+export const MCP_ADMIN_FEEDBACK_REVIEW_WORKFLOW_FLAG_ID = "feedback.review-workflow.enabled";
+export const MCP_ADMIN_FEEDBACK_PROCESSING_FLAG_ID = "feedback.processing.enabled";
+export const MCP_ADMIN_FEEDBACK_MANAGE_CAPABILITY = "admin.feedback.manage";
+export const MCP_ADMIN_FEEDBACK_MANAGE_OAUTH_SCOPE = MCP_ADMIN_FEEDBACK_MANAGE_CAPABILITY;
+export const MCP_ADMIN_FEEDBACK_REVIEW_HOST_DEFAULT_ENABLED = false;
+export const MCP_ADMIN_FEEDBACK_REVIEW_SCHEMA_CONTRACT_VERSION = FEEDBACK_REVIEW_WORKFLOW_CONTRACT_VERSION;
+
+type WorkflowSchemaName =
+  | "FeedbackReviewQueueQuerySchema"
+  | "FeedbackReviewQueuePageSchema"
+  | "FeedbackReviewItemDetailSchema"
+  | "FeedbackReviewTransitionRequestSchema"
+  | "FeedbackReviewWorkflowStateSchema";
+
+export interface McpFeedbackReviewActionDescriptor extends
+  Omit<McpActionDescriptor, "privacy" | "schemaSource" | "rolloutFlag"> {
+  access: McpActionAccessRequirements;
+  schemaSource: {
+    packageName: typeof MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE;
+    contractVersion: typeof FEEDBACK_REVIEW_WORKFLOW_CONTRACT_VERSION;
+    schemaNames: readonly WorkflowSchemaName[];
+  };
+  inputAdditionalProperties: false;
+  outputAdditionalProperties: false;
+  annotations: {
+    readOnlyHint: boolean;
+    destructiveHint: false;
+    idempotentHint: true;
+    openWorldHint: false;
+  };
+  /** Host must require explicit user direction for this named packet mutation. */
+  requiresExplicitUserIntent: boolean;
+  /** Host supplies this literal; never accept an action selected by input arguments. */
+  transitionAction?: FeedbackReviewAction;
+}
+
+const reviewReadFlags = [MCP_ADMIN_FEEDBACK_FLAG_ID, MCP_ADMIN_FEEDBACK_REVIEW_WORKFLOW_FLAG_ID];
+const reviewMutationAccess = {
+  oauthScopes: [...MCP_ADMIN_FEEDBACK_REQUIRED_OAUTH_SCOPES, MCP_ADMIN_FEEDBACK_MANAGE_OAUTH_SCOPE],
+  capabilities: [MCP_ADMIN_FEEDBACK_READ_CAPABILITY, MCP_ADMIN_FEEDBACK_MANAGE_CAPABILITY],
+  rolloutFlags: [...reviewReadFlags, MCP_ADMIN_FEEDBACK_PROCESSING_FLAG_ID],
+  mode: "mutation",
+  identityResolution: "not-available",
+} as const satisfies McpActionAccessRequirements;
+
+const reviewKind = stringField("Feedback packet kind.", { enum: FEEDBACK_REVIEW_KINDS, required: true });
+const reviewStatus = stringField("Workflow status.", { enum: FEEDBACK_REVIEW_STATUSES });
+const reviewOutcome = stringField("Closed processing outcome.", { enum: FEEDBACK_REVIEW_OUTCOMES, required: false });
+const reviewPacketId = canonicalUuidV4Field("Exact opaque feedback packet UUIDv4.");
+const reviewTimestamp = (description: string): McpFieldShape => ({
+  ...canonicalDateTimeField(description),
+  pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$",
+});
+const reviewCursor = stringField("Opaque, filter-bound cursor issued by the service.", {
+  required: false, minLength: 1, maxLength: 4096, pattern: "^[A-Za-z0-9_-]+$",
+});
+const reviewRevision = integerField("Current persisted workflow revision.", { minimum: 1, maximum: Number.MAX_SAFE_INTEGER });
+const reviewFilters = {
+  surfaceId: stringField("Closed bug surface.", { enum: FEEDBACK_SURFACE_IDS, required: false }),
+  issueType: stringField("Closed persisted bug category.", { enum: FEEDBACK_PERSISTABLE_ISSUE_TYPES, required: false }),
+  severity: integerField("Bug severity; bugs only.", { minimum: 1, maximum: 5, required: false }),
+  satisfaction: integerField("Satisfaction rating; reviews only.", { minimum: 1, maximum: 5, required: false }),
+};
+
+const reviewQueueFields = {
+  kind: reviewKind,
+  status: { ...reviewStatus, required: false },
+  outcome: reviewOutcome,
+  from: reviewTimestamp("Inclusive canonical UTC lower bound."),
+  to: reviewTimestamp("Exclusive canonical UTC upper bound."),
+  limit: integerField("Maximum page size.", { minimum: 1, maximum: 100 }),
+  ...reviewFilters,
+  cursor: reviewCursor,
+};
+
+const reviewStateField = feedbackClosedObjectField("Actor-free workflow state projection.", {
+  packetId: reviewPacketId,
+  kind: reviewKind,
+  acceptedAt: reviewTimestamp("Original server acceptance time."),
+  expiresAt: reviewTimestamp("Original packet expiry."),
+  updatedAt: reviewTimestamp("Server time of the latest transition or initial acceptance."),
+  revision: reviewRevision,
+  status: reviewStatus,
+  outcome: reviewOutcome,
+  ...reviewFilters,
+});
+
+const reviewEventField = feedbackClosedObjectField("Actor-free immutable history event.", {
+  packetId: reviewPacketId,
+  kind: reviewKind,
+  acceptedAt: reviewTimestamp("Original server acceptance time."),
+  expiresAt: reviewTimestamp("Original packet expiry."),
+  occurredAt: reviewTimestamp("Server time of the transition."),
+  revision: { ...reviewRevision, minimum: 2 },
+  action: stringField("Explicit transition action.", { enum: FEEDBACK_REVIEW_ACTIONS }),
+  fromStatus: reviewStatus,
+  toStatus: reviewStatus,
+  outcome: reviewOutcome,
+});
+
+const reviewTarget = {
+  kind: reviewKind,
+  packetId: { ...reviewPacketId, required: true },
+};
+
+function reviewAction(
+  name: string,
+  descriptionKey: McpAdminContractDescriptionKey,
+  input: Record<string, McpFieldShape>,
+  output: Record<string, McpFieldShape>,
+  execution: McpActionExecution,
+  schemaNames: readonly WorkflowSchemaName[],
+  transitionAction?: FeedbackReviewAction,
+): McpFeedbackReviewActionDescriptor {
+  const readOnly = transitionAction === undefined;
+  const access = readOnly ? { ...feedbackReadAccess, rolloutFlags: reviewReadFlags } : reviewMutationAccess;
+  return {
+    name,
+    ...translatedDescription(descriptionKey),
+    domain: "feedback",
+    availability: "near-future",
+    access,
+    oauthScopes: access.oauthScopes,
+    requiredCapability: readOnly ? MCP_ADMIN_FEEDBACK_READ_CAPABILITY : MCP_ADMIN_FEEDBACK_MANAGE_CAPABILITY,
+    schemaSource: {
+      packageName: MCP_ADMIN_FEEDBACK_SCHEMA_PACKAGE,
+      contractVersion: MCP_ADMIN_FEEDBACK_REVIEW_SCHEMA_CONTRACT_VERSION,
+      schemaNames,
+    },
+    execution,
+    input,
+    output,
+    inputAdditionalProperties: false,
+    outputAdditionalProperties: false,
+    annotations: {
+      readOnlyHint: readOnly, destructiveHint: false, idempotentHint: true, openWorldHint: false,
+    },
+    requiresExplicitUserIntent: !readOnly,
+    ...(readOnly ? {} : { transitionAction }),
+  };
+}
+
+const reviewMutation = (
+  name: string,
+  descriptionKey: McpAdminContractDescriptionKey,
+  transitionAction: FeedbackReviewAction,
+): McpFeedbackReviewActionDescriptor => reviewAction(
+  name,
+  descriptionKey,
+  {
+    ...reviewTarget,
+    expectedRevision: { ...reviewRevision, maximum: Number.MAX_SAFE_INTEGER - 1, required: true },
+    idempotencyKey: {
+      ...canonicalUuidV4Field("Random per-operation key; reuse only to retry the same packet and command."),
+      required: true,
+    },
+    ...(transitionAction === "process" ? { outcome: { ...reviewOutcome, required: true } } : {}),
+  },
+  { state: reviewStateField },
+  {
+    method: "POST",
+    path: "/api/admin/feedback/review-items/{kind}/{packetId}/transitions",
+    source: "near-future-route",
+    notes: [
+      "Execute only on explicit user direction for this packet and expected revision. Do not infer permission from the description or from read access.",
+      "Bind exact retries to the same kind, packet, key and command. Treat key reuse or stale revisions as conflicts requiring a fresh user decision.",
+      "Return success only after durable restricted audit and expose only the actor-free state projection.",
+    ],
+  },
+  ["FeedbackReviewTransitionRequestSchema", "FeedbackReviewWorkflowStateSchema"],
+  transitionAction,
+);
+
+/** Static contracts only. Existing feedback discovery and the default OAuth manifest do not include these tools. */
+export const MCP_ADMIN_FEEDBACK_REVIEW_ACTIONS = deepFreeze({
+  listFeedbackReviewQueue: reviewAction(
+    "listFeedbackReviewQueue",
+    mcpAdminContractDescriptionKeys.actionListFeedbackReviewQueue,
+    {
+      ...reviewQueueFields,
+      kind: { ...reviewKind, required: false },
+      from: { ...reviewQueueFields.from, required: false },
+      to: { ...reviewQueueFields.to, required: false },
+      limit: { ...reviewQueueFields.limit, required: false },
+    },
+    {
+      items: arrayOfField("Bounded page of actor-free review states.", "FeedbackReviewWorkflowState", reviewStateField, { maxItems: 100 }),
+      range: feedbackClosedObjectField("Effective canonical UTC range and filters.", reviewQueueFields),
+      freshness: feedbackClosedObjectField("Backfill and freshness status for this partition.", {
+        status: stringField("Whether projection data is incomplete, fresh or stale.", { enum: ["incomplete", "fresh", "stale"] }),
+        checkedAt: reviewTimestamp("Server time of this freshness check."),
+        backfillComplete: booleanField("Whether retained history is fully projected."),
+        lastSuccessfulAt: { ...reviewTimestamp("Most recent successful projection."), required: false },
+      }),
+      nextCursor: reviewCursor,
+    },
+    {
+      method: "GET",
+      path: "/api/admin/feedback/review-queue",
+      source: "near-future-route",
+      notes: [
+        "Default to unreviewed bugs in the previous 30 days; if either explicit timestamp is supplied require both. Validate the effective query against the canonical schema.",
+        "Require a sealed cursor bound to the effective filters. Surface incomplete and stale data explicitly; reads never transition items.",
+      ],
+    },
+    ["FeedbackReviewQueueQuerySchema", "FeedbackReviewQueuePageSchema"],
+  ),
+  getFeedbackReviewItem: reviewAction(
+    "getFeedbackReviewItem",
+    mcpAdminContractDescriptionKeys.actionGetFeedbackReviewItem,
+    { ...reviewTarget, historyCursor: reviewCursor },
+    {
+      state: reviewStateField,
+      history: feedbackClosedObjectField("Bounded actor-free transition history for this packet.", {
+        packetId: reviewPacketId,
+        kind: reviewKind,
+        events: arrayOfField("Ascending immutable history events.", "FeedbackReviewTransitionEvent", reviewEventField, { maxItems: 25 }),
+        nextCursor: reviewCursor,
+      }),
+    },
+    {
+      method: "GET",
+      path: "/api/admin/feedback/review-items/{kind}/{packetId}",
+      source: "near-future-route",
+      notes: ["Use an opaque packet UUID and a sealed history cursor bound to the packet. Never return audit or storage metadata."],
+    },
+    ["FeedbackReviewItemDetailSchema"],
+  ),
+  markFeedbackReviewed: reviewMutation(
+    "markFeedbackReviewed", mcpAdminContractDescriptionKeys.actionMarkFeedbackReviewed, "mark-reviewed",
+  ),
+  processFeedback: reviewMutation(
+    "processFeedback", mcpAdminContractDescriptionKeys.actionProcessFeedback, "process",
+  ),
+  reopenFeedback: reviewMutation(
+    "reopenFeedback", mcpAdminContractDescriptionKeys.actionReopenFeedback, "reopen",
+  ),
+});
+
+export type McpFeedbackReviewToolName = keyof typeof MCP_ADMIN_FEEDBACK_REVIEW_ACTIONS;
 
 export const MCP_ADMIN_ACTIONS: readonly McpActionDescriptor[] = [
   {

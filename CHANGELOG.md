@@ -3,10 +3,10 @@
 ## Unreleased
 
 - **Added**
-  - (placeholder)
+  - Separate opt-in registry for two feedback review reads and three explicit transitions, with action-level gates and bounded actor-free metadata.
 
 - **Changed**
-  - (placeholder)
+  - Require the published `@plasius/schema` 1.5.0 baseline for the workflow contract.
 
 - **Fixed**
   - (placeholder)

@@ -8,3 +8,4 @@
 - [ADR 0006: Canonical Model-Resolution Discovery](./adr-0006-canonical-model-resolution-discovery.md)
 - [ADR 0007: Safe Game Reconstruction Point Read](./adr-0007-safe-game-reconstruction-point-read.md)
 - [ADR 0008: Trusted CI and confirmed release merges](./adr-0008-trusted-ci-and-confirmed-release-merges.md)
+- [ADR 0009: Opt in to feedback review discovery without widening existing grants](./adr-0009-opt-in-feedback-review-tools.md)

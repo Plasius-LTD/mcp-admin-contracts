@@ -63,6 +63,16 @@ export const mcpAdminContractsEnGbTranslations = {
     "List bounded reporter-identifier-free structured feedback entries without narrative or storage references.",
   "mcpAdminContracts.action.getFeedbackGameReconstruction.description":
     "Read one clearly labelled safe in-game reconstruction manifest without captured pixels, narrative, reporter identity, or storage references.",
+  "mcpAdminContracts.action.listFeedbackReviewQueue.description":
+    "List a bounded actor-free review queue with effective filters and freshness. This does not change any item.",
+  "mcpAdminContracts.action.getFeedbackReviewItem.description":
+    "Read the actor-free workflow state and bounded transition history for one identified packet.",
+  "mcpAdminContracts.action.markFeedbackReviewed.description":
+    "Mark an unreviewed packet reviewed only on an explicit user request for that packet.",
+  "mcpAdminContracts.action.processFeedback.description":
+    "Record a closed outcome for a reviewed packet only on an explicit user request naming the packet and outcome.",
+  "mcpAdminContracts.action.reopenFeedback.description":
+    "Return a processed packet to reviewed, keeping history, only on an explicit user request to reopen that packet.",
   "mcpAdminContracts.action.searchAssetCatalog.description":
     "Search promoted asset catalog records without live third-party lookup.",
   "mcpAdminContracts.action.getAssetManifest.description":
