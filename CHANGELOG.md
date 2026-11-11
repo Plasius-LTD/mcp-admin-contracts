@@ -3,6 +3,20 @@
 ## Unreleased
 
 - **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.7.0] - 2026-11-11
+
+- **Added**
   - Separate opt-in registry for two feedback review reads and three explicit transitions, with action-level gates and bounded actor-free metadata.
 
 - **Changed**
@@ -398,3 +412,4 @@
 [0.6.5]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.5
 [0.6.6]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.6
 [0.6.7]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.7
+[0.7.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.7.0
