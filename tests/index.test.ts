@@ -1121,7 +1121,7 @@ describe("MCP admin contracts", () => {
     ).not.toBe(true);
     for (const document of [readme, adr]) {
       expect(document).toMatch(
-        /directly\s+(?:import|imports|consume|consumes)(?:\s+the)?(?:\s+published)?\s+`@plasius\/schema \^1\.5\.0`/i,
+        /directly\s+(?:import|imports|consume|consumes)(?:\s+the)?(?:\s+published)?\s+`@plasius\/schema \^1\.5\.1`/i,
       );
       expect(document).not.toMatch(/release (?:remains )?blocked/i);
     }
