@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **Added**
+  - (placeholder)
+
+- **Changed**
+  - (placeholder)
+
+- **Fixed**
+  - (placeholder)
+
+- **Security**
+  - (placeholder)
+
+## [0.7.1] - 2026-11-22
+
 - Refresh supported npm dependency and security tooling baselines; preserve runtime API contracts (weekly maintenance, 2026-11-22).
 
 - **Added**
@@ -415,3 +429,4 @@
 [0.6.6]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.6
 [0.6.7]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.6.7
 [0.7.0]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.7.0
+[0.7.1]: https://github.com/Plasius-LTD/mcp-admin-contracts/releases/tag/v0.7.1
